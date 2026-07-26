@@ -1,0 +1,35 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
+	"extends": ["@snowdrive/biome-config/biome.json"],
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"linter": {
+		"rules": {
+			"correctness": {
+				"noGlobalDirnameFilename": "off"
+			},
+			"style": {
+				"useComponentExportOnlyModules": "off",
+				"noProcessEnv": "off",
+				"useImportType": "off"
+			},
+			"suspicious": {
+				"noExplicitAny": "error"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
+			"quoteProperties": "asNeeded",
+			"trailingCommas": "es5",
+			"semicolons": "asNeeded"
+		}
+	},
+	"files": {
+		"includes": ["**", "!out", "!dist", "!node_modules"]
+	}
+}
