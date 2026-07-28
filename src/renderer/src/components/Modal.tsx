@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: Backdrop intentionally handles pointer clicks to dismiss the modal. */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: The backdrop intentionally only responds to pointer interactions. */
 import { cn } from '@renderer/lib/utils'
 import { useEffect, useState } from 'react'
 
@@ -36,6 +38,8 @@ export const Modal: React.FC<ModalProps> = ({ open, onClose, children }) => {
 			onClick={onClose}
 		>
 			<div
+				role="dialog"
+				aria-modal="true"
 				onClick={(e) => e.stopPropagation()}
 				className={cn(
 					'w-150 rounded-2xl bg-white p-6 shadow-2xl',

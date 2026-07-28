@@ -14,7 +14,7 @@ export const RoleCard: React.FC<RoleCardProps> = ({ icon, title, description, ic
 			<div
 				className={cn(
 					'flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700',
-          iconStyle
+					iconStyle
 				)}
 			>
 				{icon}

@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: is not required here */
 import keytar from 'keytar'
 
 export class GithubApi {

@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: is not required here */
 export interface GithubUser {
 	login: string
 	id: number
