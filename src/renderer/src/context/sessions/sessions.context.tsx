@@ -1,13 +1,57 @@
-import { createContext, useContext } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { Session, SessionRole, SessionsContextType } from './sessions.type'
+import { mergeFiles } from '@renderer/lib/utils'
 
 const SessionsContext = createContext<SessionsContextType | null>(null)
 
 export function SessionsProvider({ children }: { children: React.ReactNode }) {
-	const sessions = new Map<number, Session>()
+	const [sessions, setSessions] = useState<Map<number, Session>>(new Map())
 
-	const addSession = (projectId: number, role: SessionRole) => {
-		sessions.set(projectId, { role, state: 'disconnected' })
+	const addSession = (repositoryId: number, role: SessionRole) => {
+		setSessions((prev) => {
+			const next = new Map(prev)
+			next.set(repositoryId, {
+				role,
+				state: 'disconnected',
+			})
+			return next
+		})
+	}
+
+	const getCurrentSession = (repositoryId: number) => sessions.get(repositoryId)
+
+	const hasSession = (repositoryId: number) => sessions.has(repositoryId)
+
+	const setSessionRepository = (repositoryId: number, repository: Session['repository']) => {
+		setSessions((prev) => {
+			const current = prev.get(repositoryId)
+			if (!current) return prev
+
+			const next = new Map(prev)
+			next.set(repositoryId, {
+				...current,
+				repository,
+			})
+
+			return next
+		})
+	}
+
+	const setSessionFiles = (repositoryId: number, files: Session['files']) => {
+		setSessions((prev) => {
+			const current = prev.get(repositoryId)
+
+			if (!current) return prev
+
+			const next = new Map(prev)
+
+			next.set(repositoryId, {
+				...current,
+				files: mergeFiles(current.files ?? [], files ?? []),
+			})
+
+			return next
+		})
 	}
 
 	return (
@@ -15,6 +59,10 @@ export function SessionsProvider({ children }: { children: React.ReactNode }) {
 			value={{
 				sessions,
 				addSession,
+				getCurrentSession,
+				hasSession,
+				setSessionRepository,
+				setSessionFiles,
 			}}
 		>
 			{children}

@@ -8,11 +8,10 @@ import { GithubRepo } from './context/user.types'
 import { CreateSessionModal } from './components/CreateSessionsModal'
 import { useSessions } from './context/sessions/sessions.context'
 import { ActiveRepository } from './tabs/ActiveRepository/ActiveRepository'
-import { cn } from './lib/utils'
-import { Dashboard } from './tabs/Dashboard/Dashboard'
+import { Repositories } from './tabs/Dashboard/Dashboard'
 
 export const App = () => {
-	const { sessions } = useSessions()
+	const { sessions, hasSession } = useSessions()
 	const { user, loading, repos } = useUser()
 	const [isOpen, setIsOpen] = useState(false)
 	const [selectedRepo, setSelectedRepo] = useState<GithubRepo | null>(null)
@@ -20,6 +19,7 @@ export const App = () => {
 	if (loading) {
 		return <Loading />
 	}
+
 	const sessionIds = new Set(sessions.keys())
 	const sortedRepos =
 		repos?.toSorted((a, b) => {
@@ -31,7 +31,7 @@ export const App = () => {
 
 	const handleSelectRepository = (repo: GithubRepo) => {
 		setSelectedRepo(repo)
-		if (sessions.has(repo.id)) return
+		if (hasSession(repo.id)) return
 		setIsOpen(true)
 	}
 
@@ -40,28 +40,23 @@ export const App = () => {
 		setIsOpen(false)
 	}
 
-	const isSelectedActiveRepo = selectedRepo && sessions.has(selectedRepo.id)
+	const isSelectedActiveRepo = selectedRepo && hasSession(selectedRepo.id)
 
 	if (user) {
 		return (
-			<>
+			<div className="h-screen w-screen flex flex-col">
 				{selectedRepo && (
 					<CreateSessionModal isOpen={isOpen} onCancel={onCancel} selectedRepo={selectedRepo} />
 				)}
 				<Header />
-				<div
-					className={cn(
-						'grid sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 px-6 py-4',
-						isSelectedActiveRepo && 'block'
-					)}
-				>
+				<div className="flex-1 min-h-0 overflow-x-hidden">
 					{isSelectedActiveRepo ? (
 						<ActiveRepository repo={selectedRepo} onBack={onCancel} />
 					) : (
-						<Dashboard repos={sortedRepos} onClick={handleSelectRepository} />
+						<Repositories repos={sortedRepos} onClick={handleSelectRepository} />
 					)}
 				</div>
-			</>
+			</div>
 		)
 	}
 

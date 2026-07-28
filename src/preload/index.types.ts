@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: is not required here */
 import { ElectronAPI } from '@electron-toolkit/preload'
 
 declare global {
@@ -6,6 +7,8 @@ declare global {
 			openExternal(url: string): Promise<void>
 			onGithubCallback: (callback: (url: string) => void) => void
 			exchangeToken: (code: string, codeVerifier: string) => Promise<any>
+			selectFolder: () => Promise<LocalFolder>
+			selectFiles: (repositoryRoot: string) => Promise<LocalSecretFile[]>
 			github: {
 				getUser: () => Promise<any>
 				getRepos: (params?: ReposParams) => Promise<any>
@@ -14,6 +17,23 @@ declare global {
 			}
 		} & ElectronAPI
 	}
+}
+
+interface LocalSecretFile {
+	name: string
+	relativePath: string
+	content: string
+	hash: string
+	size: number
+}
+
+interface LocalFolder {
+	path: string
+	valid: boolean
+	name?: string
+	version?: string
+	shareIt?: boolean
+	url?: string
 }
 
 export interface ReposParams {

@@ -19,6 +19,10 @@ if (process.contextIsolated) {
 				ipcRenderer.on('github:callback', (_, url) => callback(url))
 			},
 
+			selectFolder: () => ipcRenderer.invoke('select-folder'),
+
+			selectFiles: (repositoryRoot: string) => ipcRenderer.invoke('select-files', repositoryRoot),
+
 			github: {
 				getUser: () => ipcRenderer.invoke('github:get-user'),
 

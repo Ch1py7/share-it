@@ -1,8 +1,11 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'node:path'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import path, { join } from 'node:path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { GithubApi } from './GithubApi'
+import { access, readFile } from 'node:fs/promises'
+import { simpleGit } from 'simple-git'
+import { createHash } from 'node:crypto'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -80,6 +83,69 @@ ipcMain.handle('github:get-repos', (_, params) => githubAuth.getRepos(params))
 ipcMain.handle('github:logout', () => githubAuth.logout())
 
 ipcMain.handle('github:save-token', (_, { token }) => githubAuth.saveToken(token))
+
+ipcMain.handle('select-folder', async () => {
+	const result = await dialog.showOpenDialog({
+		properties: ['openDirectory'],
+	})
+
+	if (result.canceled) {
+		return null
+	}
+
+	const repositoryPath = result.filePaths[0]
+
+	try {
+		const git = simpleGit(repositoryPath)
+		const remotes = await git.getRemotes(true)
+		const packageJsonPath = path.join(repositoryPath, 'package.json')
+		const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'))
+		await access(packageJsonPath)
+
+		return {
+			path: repositoryPath,
+			valid: true,
+			name: packageJson.name ?? '',
+			version: packageJson.version ?? '',
+			shareIt: packageJson['share-it'] ?? false,
+			url: remotes[0]?.refs.fetch ?? '',
+		}
+	} catch {
+		return {
+			path: repositoryPath,
+			valid: false,
+		}
+	}
+})
+
+ipcMain.handle('select-files', async (_, repositoryRoot: string) => {
+	const result = await dialog.showOpenDialog({
+		title: 'Select files to synchronize',
+		buttonLabel: 'Select',
+		properties: ['openFile', 'multiSelections'],
+		defaultPath: repositoryRoot,
+	})
+
+	if (result.canceled) {
+		return null
+	}
+
+	const files = await Promise.all(
+		result.filePaths.map(async (filePath) => {
+			const buffer = await readFile(filePath)
+
+			return {
+				name: path.basename(filePath),
+				relativePath: path.relative(repositoryRoot, filePath),
+				content: buffer.toString('base64'),
+				hash: createHash('sha256').update(buffer).digest('hex'),
+				size: buffer.length,
+			}
+		})
+	)
+
+	return files
+})
 
 app.whenReady().then(() => {
 	electronApp.setAppUserModelId('com.electron')

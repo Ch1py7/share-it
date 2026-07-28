@@ -19,10 +19,10 @@ interface RepositoryCardProps {
 }
 
 export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, onClick }) => {
-	const { sessions } = useSessions()
+	const { hasSession, getCurrentSession } = useSessions()
 
-	const session = sessions.get(repo.id)
-	const isWithSession = sessions.has(repo.id)
+	const session = getCurrentSession(repo.id)
+	const hasSessions = hasSession(repo.id)
 
 	const sessionStyle = {
 		connected: {
@@ -86,7 +86,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, onClick })
 						</div>
 					</div>
 
-					{!isWithSession && (
+					{!hasSessions && (
 						<ExternalLink
 							size={18}
 							className="absolute top-3 right-3 text-zinc-400 transition-all group-hover:translate-x-1 group-hover:text-zinc-900"

@@ -1,3 +1,4 @@
+import { SessionFile } from '@renderer/context/sessions/sessions.type'
 import clsx from 'clsx'
 import { ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -25,4 +26,18 @@ export const challenge = async (verifier: string) => {
 	const hash = await crypto.subtle.digest('SHA-256', encoder.encode(verifier))
 
 	return base64url(new Uint8Array(hash))
+}
+
+export const formatWithCommas = (num: number) => {
+	return num.toLocaleString('en-US')
+}
+
+export function mergeFiles(current: SessionFile[], incoming: SessionFile[]): SessionFile[] {
+	const files = new Map(current.map((file) => [file.relativePath, file]))
+
+	for (const file of incoming) {
+		files.set(file.relativePath, file)
+	}
+
+	return [...files.values()]
 }
