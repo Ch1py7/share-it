@@ -3,18 +3,20 @@ export type SessionRole = 'owner' | 'collaborator'
 export interface Session {
 	role: SessionRole
 	state: 'disconnected' | 'error' | 'connected' | 'loading'
-	repository?: {
-		path: string
-		valid: boolean
-		name?: string
-		version?: string
-		shareIt?: boolean
-		url?: string
-	}
-	files?: SessionFile[]
+	repository?: Repository
+	files?: Files[]
 }
 
-export interface SessionFile {
+export interface Repository {
+	path: string
+	valid: boolean
+	name?: string
+	version?: string
+	shareIt?: boolean
+	url?: string
+}
+
+export interface Files {
 	name: string
 	relativePath: string
 	content: string
@@ -28,5 +30,6 @@ export interface SessionsContextType {
 	getCurrentSession: (repositoryId: number) => Session | undefined
 	hasSession: (repositoryId: number) => boolean
 	setSessionRepository: (repositoryId: number, repository: Session['repository']) => void
-	setSessionFiles: (repositoryId: number, files: Session['files']) => void
+	setSessionFiles: (repositoryId: number, files: Files[]) => void
+	removeSessionFiles: (repositoryId: number, files: Files[]) => void
 }

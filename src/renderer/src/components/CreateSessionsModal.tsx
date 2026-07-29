@@ -3,7 +3,7 @@ import { Modal } from './Modal'
 import { RoleCard } from './RoleCard'
 import { GithubRepo } from '@renderer/context/user.types'
 import { useSessions } from '@renderer/context/sessions/sessions.context'
-import { SessionRole } from '@renderer/context/sessions/sessions.type'
+import { SessionRole } from '@renderer/context/sessions/sessions.types'
 
 interface CreateSessionModalProps {
 	isOpen: boolean
@@ -44,7 +44,7 @@ export const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 								<img
 									src={selectedRepo.owner.avatar_url}
 									alt={selectedRepo.owner.login}
-									className="h-10 w-10 rounded-full ring-2 ring-white"
+									className="h-10 w-10 rounded-full"
 								/>
 
 								<div>

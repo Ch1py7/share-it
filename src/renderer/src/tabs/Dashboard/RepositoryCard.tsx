@@ -51,9 +51,19 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, onClick })
 		<button type="button" onClick={() => onClick(repo)} className="cursor-pointer">
 			<Card
 				className={cn(
-					'group relative w-full p-4 transition-all',
-					session ? 'border-zinc-300 bg-zinc-50/60' : 'hover:border-zinc-300 hover:shadow-lg',
-					session?.state === 'connected' && 'border-l-4 border-l-emerald-500'
+					'group relative w-full border p-4 transition-all',
+					session
+						? 'border-zinc-300 bg-zinc-50 shadow-sm'
+						: 'border-zinc-200 hover:border-zinc-300 hover:shadow-lg',
+
+					session?.state === 'connected' && 'border-emerald-200',
+					session?.state === 'loading' && 'border-sky-200',
+					session?.state === 'error' && 'border-red-200',
+					session?.state === 'disconnected' && 'border-zinc-200',
+					session &&
+						(session?.role === 'owner'
+							? 'border-l-4 border-l-violet-500'
+							: 'border-l-4 border-l-sky-500')
 				)}
 			>
 				<div className="flex items-center justify-between">
@@ -61,7 +71,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, onClick })
 						<img
 							src={repo.owner.avatar_url}
 							alt={repo.owner.login}
-							className="min-h-10 h-10 min-w-10 w-10 rounded-full ring-2 ring-white aspect-square"
+							className="min-h-10 h-10 min-w-10 w-10 rounded-full aspect-square"
 						/>
 
 						<div>

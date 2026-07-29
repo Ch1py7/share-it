@@ -1,4 +1,4 @@
-import { SessionFile } from '@renderer/context/sessions/sessions.type'
+import { Files } from '@renderer/context/sessions/sessions.types'
 import clsx from 'clsx'
 import { ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
@@ -32,7 +32,7 @@ export const formatWithCommas = (num: number) => {
 	return num.toLocaleString('en-US')
 }
 
-export function mergeFiles(current: SessionFile[], incoming: SessionFile[]): SessionFile[] {
+export const mergeFiles = (current: Files[], incoming: Files[]): Files[] => {
 	const files = new Map(current.map((file) => [file.relativePath, file]))
 
 	for (const file of incoming) {
@@ -40,4 +40,14 @@ export function mergeFiles(current: SessionFile[], incoming: SessionFile[]): Ses
 	}
 
 	return [...files.values()]
+}
+
+export const sizePrefix = (size: number) => {
+	if (size > 999) {
+		return 'mb'
+	} else if (size > 999999) {
+		return 'gb'
+	} else {
+		return 'kb'
+	}
 }

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from 'react'
-import { Session, SessionRole, SessionsContextType } from './sessions.type'
+import { Files, Session, SessionRole, SessionsContextType } from './sessions.types'
 import { mergeFiles } from '@renderer/lib/utils'
 
 const SessionsContext = createContext<SessionsContextType | null>(null)
@@ -37,7 +37,7 @@ export function SessionsProvider({ children }: { children: React.ReactNode }) {
 		})
 	}
 
-	const setSessionFiles = (repositoryId: number, files: Session['files']) => {
+	const setSessionFiles = (repositoryId: number, files: Files[]) => {
 		setSessions((prev) => {
 			const current = prev.get(repositoryId)
 
@@ -47,7 +47,28 @@ export function SessionsProvider({ children }: { children: React.ReactNode }) {
 
 			next.set(repositoryId, {
 				...current,
-				files: mergeFiles(current.files ?? [], files ?? []),
+				files: mergeFiles(current.files ?? [], files),
+			})
+
+			return next
+		})
+	}
+
+	const removeSessionFiles = (repositoryId: number, deletedFiles: Files[]) => {
+		setSessions((prev) => {
+			const current = prev.get(repositoryId)
+
+			if (!current) return prev
+
+			const rest = current.files?.filter(
+				(f) => !deletedFiles.map((d) => d.relativePath).includes(f.relativePath)
+			)
+
+			const next = new Map(prev)
+
+			next.set(repositoryId, {
+				...current,
+				files: rest,
 			})
 
 			return next
@@ -63,6 +84,7 @@ export function SessionsProvider({ children }: { children: React.ReactNode }) {
 				hasSession,
 				setSessionRepository,
 				setSessionFiles,
+				removeSessionFiles,
 			}}
 		>
 			{children}

@@ -4,8 +4,11 @@ import { Errors } from '@renderer/constants/errors'
 import { useSessions } from '@renderer/context/sessions/sessions.context'
 import { GithubRepo } from '@renderer/context/user.types'
 import { useErrors } from '@renderer/hooks/useErrors'
-import { formatWithCommas } from '@renderer/lib/utils'
-import { ArrowLeft, FileCode, FolderCode, FolderOpen } from 'lucide-react'
+import { ArrowLeft, FolderCode, FolderOpen, Trash2 } from 'lucide-react'
+import { AddFiles } from './AddFiles'
+import { Files } from './Files'
+import { Files as FilesType } from '@renderer/context/sessions/sessions.types'
+import { useState } from 'react'
 
 interface ActiveRepositoryProps {
 	repo: GithubRepo
@@ -13,7 +16,9 @@ interface ActiveRepositoryProps {
 }
 
 export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack }) => {
-	const { getCurrentSession, setSessionRepository, setSessionFiles } = useSessions()
+	const [filesToDelete, setFilesToDelete] = useState<FilesType[]>([])
+	const { getCurrentSession, setSessionRepository, setSessionFiles, removeSessionFiles } =
+		useSessions()
 	const {
 		error,
 		customMessage,
@@ -48,6 +53,11 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 		const files = await window.electron.selectFiles(currentSession?.repository?.path)
 		setSessionFiles(repo.id, files)
 	}
+
+	const onDelete = (files: FilesType[]) => {
+		removeSessionFiles(repo.id, files)
+	}
+
 	return (
 		<div className="flex h-full flex-col p-6 gap-3">
 			<div className="flex items-center justify-between">
@@ -110,72 +120,32 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 							<p className="mt-1 text-sm text-zinc-500">Files selected for synchronization</p>
 						</div>
 
-						<div className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700">
-							{currentSession.files?.length} selected
-						</div>
-					</div>
-					<div className="flex-1 overflow-y-auto">
-						{currentSession.files?.map((file) => (
-							<div
-								key={file.relativePath}
-								className="flex items-center justify-between border-b border-zinc-100 px-5 py-3 transition hover:bg-zinc-50"
-							>
-								<div className="flex items-center gap-3">
-									<FileCode className="text-zinc-500" size={18} />
-
-									<div>
-										<p className="font-medium">{file.name}</p>
-
-										<p className="text-xs text-zinc-500">{file.relativePath}</p>
-									</div>
+						<div className="flex items-center justify-center gap-2">
+							{Boolean(currentSession.files?.length) && (
+								<div className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700">
+									{currentSession.files?.length} selected
 								</div>
-
-								<p className="text-sm text-zinc-500">{formatWithCommas(file.size)}</p>
-							</div>
-						))}
-					</div>
-
-					<div className="border-t border-zinc-200 p-8">
-						<div className="hidden lg:block rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 p-10 text-center transition hover:border-zinc-300">
-							<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-100 text-sky-700">
-								<FolderCode size={28} />
-							</div>
-
-							<h3 className="mt-5 font-semibold">Add files to synchronize</h3>
-
-							<p className="mt-2 text-sm text-zinc-500">
-								Drag & drop files here or browse your computer.
-							</p>
-
-							<button
-								type="button"
-								onClick={handleSelectFiles}
-								className="mt-6 rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-black"
-							>
-								Select Files
-							</button>
-						</div>
-						<div className="lg:hidden flex items-center gap-4">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
-								<FolderCode size={28} />
-							</div>
-
-							<div>
-								<h3 className="mt-5 font-semibold">Add files to synchronize</h3>
-								<p className="mt-2 text-sm text-zinc-500">
-									Drag & drop files here or browse your computer.
-								</p>
-							</div>
-
-							<button
-								type="button"
-								onClick={handleSelectFiles}
-								className="rounded-lg ms-auto border bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-black"
-							>
-								Select Files
-							</button>
+							)}
+							{Boolean(filesToDelete.length) && (
+								<button
+									type="button"
+									onClick={() => onDelete(filesToDelete)}
+									className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-red-50 hover:text-red-600"
+								>
+									<Trash2 size={15} />
+								</button>
+							)}
 						</div>
 					</div>
+					{currentSession.files && (
+						<Files
+							files={currentSession.files}
+							onDelete={onDelete}
+							filesToDelete={filesToDelete}
+							setFilesToDelete={setFilesToDelete}
+						/>
+					)}
+					<AddFiles onClick={handleSelectFiles} full={Boolean(!currentSession.files)} />
 				</Card>
 			) : (
 				<Card className="flex flex-1 min-h-0 w-full flex-col items-center justify-center p-10">
