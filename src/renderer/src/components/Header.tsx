@@ -2,6 +2,7 @@ import { useSessions } from '@renderer/context/sessions/sessions.context'
 import { useUser } from '@renderer/context/user.context'
 import { Bell, Search, Settings, User2, Users } from 'lucide-react'
 import { CurrentSessions } from './CurrentSessions'
+import { Tooltip } from './Tooltip'
 
 export const Header = () => {
 	const { user } = useUser()
@@ -22,21 +23,23 @@ export const Header = () => {
 					</div>
 
 					{sessions.size > 0 && (
-						<div className="group relative ml-3 flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 py-1.5">
-							<div className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-900 text-white ms-3">
-								<Users size={14} />
+						<Tooltip className="ml-3" position="bottom" content={<CurrentSessions />}>
+							<div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 py-1.5">
+								<div className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-900 text-white ms-3">
+									<Users size={14} />
+								</div>
+
+								<div className="flex flex-col leading-none me-3">
+									<span className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+										Current Sessions
+									</span>
+
+									<span className="text-sm font-semibold text-zinc-900">
+										{sessions.size} active
+									</span>
+								</div>
 							</div>
-
-							<div className="flex flex-col leading-none me-3">
-								<span className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
-									Current Sessions
-								</span>
-
-								<span className="text-sm font-semibold text-zinc-900">{sessions.size} active</span>
-							</div>
-
-							<CurrentSessions />
-						</div>
+						</Tooltip>
 					)}
 				</div>
 

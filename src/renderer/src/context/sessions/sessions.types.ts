@@ -2,7 +2,7 @@ export type SessionRole = 'owner' | 'collaborator'
 
 export interface Session {
 	role: SessionRole
-	state: 'disconnected' | 'error' | 'connected' | 'loading'
+	state: States
 	repository?: Repository
 	files?: Files[]
 }
@@ -24,12 +24,17 @@ export interface Files {
 	size: number
 }
 
+export type States = 'disconnected' | 'error' | 'connected' | 'loading' | 'pending'
+
+type SessionsStateQty = Record<States, number>
 export interface SessionsContextType {
 	sessions: Map<number, Session>
+	sessionsStateQty: SessionsStateQty
 	addSession: (repositoryId: number, role: SessionRole) => void
 	getCurrentSession: (repositoryId: number) => Session | undefined
 	hasSession: (repositoryId: number) => boolean
 	setSessionRepository: (repositoryId: number, repository: Session['repository']) => void
 	setSessionFiles: (repositoryId: number, files: Files[]) => void
 	removeSessionFiles: (repositoryId: number, files: Files[]) => void
+	setSessionState: (repositoryId: number, state: States) => void
 }

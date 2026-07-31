@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react'
 export const Loading = () => {
 	return (
 		<div className="min-h-screen w-screen bg-linear-to-br from-zinc-50 via-white to-zinc-100 flex items-center justify-center p-6">
-			<div className="absolute inset-0 -z-10 overflow-hidden">
+			<div className="absolute inset-0 overflow-hidden">
 				<div className="absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-zinc-300/20 blur-3xl" />
 			</div>
 

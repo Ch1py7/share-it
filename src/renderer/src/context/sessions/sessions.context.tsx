@@ -1,5 +1,5 @@
-import { createContext, useContext, useState } from 'react'
-import { Files, Session, SessionRole, SessionsContextType } from './sessions.types'
+import { createContext, useContext, useMemo, useState } from 'react'
+import { Files, Session, SessionRole, SessionsContextType, States } from './sessions.types'
 import { mergeFiles } from '@renderer/lib/utils'
 
 const SessionsContext = createContext<SessionsContextType | null>(null)
@@ -31,6 +31,7 @@ export function SessionsProvider({ children }: { children: React.ReactNode }) {
 			next.set(repositoryId, {
 				...current,
 				repository,
+				state: 'pending',
 			})
 
 			return next
@@ -75,16 +76,50 @@ export function SessionsProvider({ children }: { children: React.ReactNode }) {
 		})
 	}
 
+	const setSessionState = (repositoryId: number, state: States) => {
+		setSessions((prev) => {
+			const current = prev.get(repositoryId)
+			if (!current) return prev
+
+			const next = new Map(prev)
+
+			next.set(repositoryId, {
+				...current,
+				state,
+			})
+
+			return next
+		})
+	}
+
+	const sessionsStateQty = useMemo(() => {
+		const counts = {
+			connected: 0,
+			disconnected: 0,
+			loading: 0,
+			error: 0,
+			pending: 0,
+		}
+
+		for (const session of sessions.values()) {
+			counts[session.state]++
+		}
+
+		return counts
+	}, [sessions])
+
 	return (
 		<SessionsContext.Provider
 			value={{
 				sessions,
+				sessionsStateQty,
 				addSession,
 				getCurrentSession,
 				hasSession,
 				setSessionRepository,
 				setSessionFiles,
 				removeSessionFiles,
+				setSessionState,
 			}}
 		>
 			{children}

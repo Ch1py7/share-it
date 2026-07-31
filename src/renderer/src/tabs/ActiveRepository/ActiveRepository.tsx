@@ -7,8 +7,11 @@ import { useErrors } from '@renderer/hooks/useErrors'
 import { ArrowLeft, FolderCode, FolderOpen, Trash2 } from 'lucide-react'
 import { AddFiles } from './AddFiles'
 import { Files } from './Files'
-import { Files as FilesType } from '@renderer/context/sessions/sessions.types'
+import { Files as FilesType, States } from '@renderer/context/sessions/sessions.types'
 import { useState } from 'react'
+import { Tooltip } from '@renderer/components/Tooltip'
+import { SessionStateHelper } from '@renderer/components/SessionStateHelper'
+import { cn } from '@renderer/lib/utils'
 
 interface ActiveRepositoryProps {
 	repo: GithubRepo
@@ -29,6 +32,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 	} = useErrors()
 
 	const currentSession = getCurrentSession(repo.id)
+	const sessionState: States = currentSession?.state ?? 'disconnected'
 
 	const handleSelectFolder = async () => {
 		onClose()
@@ -70,16 +74,33 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 						<ArrowLeft size={18} />
 					</button>
 
-					<div>
-						<h1 className="text-2xl font-bold tracking-tight">{repo.name}</h1>
+					<Tooltip
+						position="bottom"
+						content={<SessionStateHelper currentSession={currentSession} error={error} />}
+					>
+						<div className="flex items-center gap-2">
+							<div
+								className={cn(
+									'w-2 h-2 bg-red-400 rounded-full',
+									sessionState === 'connected' && 'bg-emerald-500',
+									sessionState === 'loading' && 'bg-sky-500',
+									sessionState === 'error' && 'bg-red-500',
+									sessionState === 'disconnected' && 'bg-zinc-400',
+									sessionState === 'pending' && 'bg-yellow-400'
+								)}
+							/>
+							<div>
+								<h1 className="text-2xl font-bold tracking-tight">{repo.name}</h1>
 
-						<p className="text-sm text-zinc-500">{repo.full_name}</p>
-					</div>
+								<p className="text-sm text-zinc-500">{repo.full_name}</p>
+							</div>
+						</div>
+					</Tooltip>
 				</div>
 
 				<div className="flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-700">
 					<div className="h-2 w-2 rounded-full bg-emerald-500" />
-					{currentSession?.state}
+					{sessionState}
 				</div>
 			</div>
 			{error && (
