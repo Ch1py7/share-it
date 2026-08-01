@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { Tooltip } from '@renderer/components/Tooltip'
 import { SessionStateHelper } from '@renderer/components/SessionStateHelper'
 import { cn } from '@renderer/lib/utils'
+import { sessionStateConfig } from '@renderer/constants/states'
 
 interface ActiveRepositoryProps {
 	repo: GithubRepo
@@ -77,18 +78,10 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 					<Tooltip
 						position="bottom"
 						content={<SessionStateHelper currentSession={currentSession} error={error} />}
+						tooltipClassNames="w-2/1"
 					>
 						<div className="flex items-center gap-2">
-							<div
-								className={cn(
-									'w-2 h-2 bg-red-400 rounded-full',
-									sessionState === 'connected' && 'bg-emerald-500',
-									sessionState === 'loading' && 'bg-sky-500',
-									sessionState === 'error' && 'bg-red-500',
-									sessionState === 'disconnected' && 'bg-zinc-400',
-									sessionState === 'pending' && 'bg-yellow-400'
-								)}
-							/>
+							<div className={cn('w-2 h-2 rounded-full', sessionStateConfig[sessionState].color)} />
 							<div>
 								<h1 className="text-2xl font-bold tracking-tight">{repo.name}</h1>
 
@@ -98,10 +91,23 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 					</Tooltip>
 				</div>
 
-				<div className="flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-700">
-					<div className="h-2 w-2 rounded-full bg-emerald-500" />
-					{sessionState}
-				</div>
+				<Tooltip
+					position="bottom"
+					content={<SessionStateHelper currentSession={currentSession} error={error} />}
+					align="right"
+					tooltipClassNames="w-2/1"
+				>
+					<div
+						className={cn(
+							'flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium',
+							sessionStateConfig[sessionState].bg,
+							sessionStateConfig[sessionState].text
+						)}
+					>
+						<div className={cn('h-2 w-2 rounded-full', sessionStateConfig[sessionState].color)} />
+						{sessionStateConfig[sessionState].label}
+					</div>
+				</Tooltip>
 			</div>
 			{error && (
 				<ErrorFallback error={error} onClose={onClose}>

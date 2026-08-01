@@ -26,7 +26,8 @@ export interface Files {
 
 export type States = 'disconnected' | 'error' | 'connected' | 'loading' | 'pending'
 
-type SessionsStateQty = Record<States, number>
+export type SessionsStateQty = Record<States, number>
+
 export interface SessionsContextType {
 	sessions: Map<number, Session>
 	sessionsStateQty: SessionsStateQty

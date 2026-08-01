@@ -1,5 +1,12 @@
 import { createContext, useContext, useMemo, useState } from 'react'
-import { Files, Session, SessionRole, SessionsContextType, States } from './sessions.types'
+import {
+	Files,
+	Session,
+	SessionRole,
+	SessionsContextType,
+	SessionsStateQty,
+	States,
+} from './sessions.types'
 import { mergeFiles } from '@renderer/lib/utils'
 
 const SessionsContext = createContext<SessionsContextType | null>(null)
@@ -92,7 +99,7 @@ export function SessionsProvider({ children }: { children: React.ReactNode }) {
 		})
 	}
 
-	const sessionsStateQty = useMemo(() => {
+	const sessionsStateQty: SessionsStateQty = useMemo(() => {
 		const counts = {
 			connected: 0,
 			disconnected: 0,

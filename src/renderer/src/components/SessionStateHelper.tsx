@@ -13,16 +13,24 @@ export const SessionStateHelper: React.FC<SessionStateHelperProps> = ({
 	const state = currentSession?.state ?? 'disconnected'
 	const role = currentSession?.role ?? 'owner'
 
+	const messages = {
+		disconnected:
+			'This session is not linked to a local repository yet. Link a local folder to continue.',
+		pending:
+			role === 'collaborator'
+				? 'Your session is ready. Click Connect to join the collaboration session.'
+				: 'Your session is ready. Click Create to start the collaboration session.',
+		loading: 'Your session is starting. This may take a moment.',
+		connected:
+			role === 'collaborator'
+				? 'Your session is open and ready to synchronize files.'
+				: 'Your session is active and ready for collaborators.',
+		error: error ? errorsContent[error].description : 'Something went wrong with this session.',
+	}
+
 	return (
-		<>
-			{state === 'disconnected' &&
-				'This session is pending, you have to link the local proyect before to make a connection or a room.'}
-			{state === 'pending' &&
-				`You'r session is pending, you have to click in ${role === 'collaborator' ? 'Connect' : 'Create'}.`}
-			{state === 'loading' && "You'r session is loading, be patient."}
-			{state === 'connected' &&
-				`You're ${role === 'collaborator' ? 'session is open' : 'connected'}`}
-			{state === 'error' && error && errorsContent[error].description}
-		</>
+		<div className="p-3 space-y-2 z-10 rounded-xl border border-zinc-200 bg-zinc-50">
+			{messages[state]}
+		</div>
 	)
 }
