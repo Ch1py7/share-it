@@ -1,17 +1,12 @@
-import {
-	AlertCircle,
-	ExternalLink,
-	GitFork,
-	Loader2,
-	Lock,
-	Star,
-	Wifi,
-	WifiOff,
-} from 'lucide-react'
+import { ExternalLink, GitFork, Lock, Star } from 'lucide-react'
 import { Card } from '../../components/Card'
-import { GithubRepo } from '@renderer/context/user.types'
-import { useSessions } from '@renderer/context/sessions/sessions.context'
+import { GithubRepo } from '@renderer/stores/user/user.types'
 import { cn } from '@renderer/lib/utils'
+import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
+import { getColorByState, getStyleByState } from './utils'
+import { useMemo } from 'react'
+import { Tooltip } from '@renderer/components/Tooltip'
+import { SessionStateHelper } from '@renderer/components/SessionStateHelper'
 
 interface RepositoryCardProps {
 	repo: GithubRepo
@@ -19,49 +14,24 @@ interface RepositoryCardProps {
 }
 
 export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, onClick }) => {
-	const { hasSession, getCurrentSession } = useSessions()
-
-	const session = getCurrentSession(repo.id)
-	const hasSessions = hasSession(repo.id)
-
-	const sessionStyle = {
-		connected: {
-			icon: <Wifi size={14} />,
-			className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-			label: 'Connected',
-		},
-		loading: {
-			icon: <Loader2 size={14} className="animate-spin" />,
-			className: 'border-sky-200 bg-sky-50 text-sky-700',
-			label: 'Connecting',
-		},
-		error: {
-			icon: <AlertCircle size={14} />,
-			className: 'border-red-200 bg-red-50 text-red-700',
-			label: 'Error',
-		},
-		disconnected: {
-			icon: <WifiOff size={14} />,
-			className: 'border-zinc-200 bg-zinc-50 text-zinc-600',
-			label: 'Disconnected',
-		},
-	}[session?.state ?? '']
+	const { getCurrentSession } = useSessionsStore()
+	const currentSession = getCurrentSession(repo.id)
+	const sessionStyle = useMemo(
+		() => getStyleByState[currentSession?.state ?? ''],
+		[currentSession?.state]
+	)
 
 	return (
-		<button type="button" onClick={() => onClick(repo)} className="cursor-pointer">
+		<button type="button" onClick={() => onClick(repo)} className={cn('cursor-pointer relative')}>
 			<Card
 				className={cn(
 					'group relative w-full border p-4 transition-all',
-					session
-						? 'border-zinc-300 bg-zinc-50 shadow-sm'
+					currentSession
+						? 'border-zinc-300 shadow-sm'
 						: 'border-zinc-200 hover:border-zinc-300 hover:shadow-lg',
-
-					session?.state === 'connected' && 'border-emerald-200',
-					session?.state === 'loading' && 'border-sky-200',
-					session?.state === 'error' && 'border-red-200',
-					session?.state === 'disconnected' && 'border-zinc-200',
-					session &&
-						(session?.role === 'owner'
+					getColorByState(currentSession?.state),
+					currentSession &&
+						(currentSession?.role === 'owner'
 							? 'border-l-4 border-l-violet-500'
 							: 'border-l-4 border-l-sky-500')
 				)}
@@ -95,24 +65,10 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, onClick })
 							</div>
 						</div>
 					</div>
-
-					{!hasSessions && (
-						<ExternalLink
-							size={18}
-							className="absolute top-3 right-3 text-zinc-400 transition-all group-hover:translate-x-1 group-hover:text-zinc-900"
-						/>
-					)}
 				</div>
 
 				<div className="absolute right-3 top-3">
-					{session ? (
-						<div
-							className={`flex h-8 items-center gap-2 rounded-lg border px-2 ${sessionStyle.className}`}
-						>
-							{sessionStyle.icon}
-							<span className="text-xs font-medium">{sessionStyle.label}</span>
-						</div>
-					) : (
+					{!currentSession && (
 						<ExternalLink
 							size={18}
 							className="text-zinc-400 transition-all group-hover:translate-x-1 group-hover:text-zinc-900"
@@ -120,6 +76,21 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, onClick })
 					)}
 				</div>
 			</Card>
+			{currentSession && (
+				<div className="absolute right-3 top-3">
+					<Tooltip
+						position="bottom"
+						content={<SessionStateHelper currentSession={currentSession} />}
+					>
+						<div
+							className={`flex h-8 items-center gap-2 rounded-lg border px-2 ${sessionStyle.className}`}
+						>
+							{sessionStyle.icon}
+							<span className="text-xs font-medium">{sessionStyle.label}</span>
+						</div>
+					</Tooltip>
+				</div>
+			)}
 		</button>
 	)
 }

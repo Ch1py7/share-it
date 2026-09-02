@@ -2,12 +2,14 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import path, { join } from 'node:path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { GithubApi } from './GithubApi'
+import { BackendService } from './backend.service'
 import { access, readFile } from 'node:fs/promises'
 import { simpleGit } from 'simple-git'
 import { createHash } from 'node:crypto'
+import { SocketService } from './services/socket.service'
 
 let mainWindow: BrowserWindow | null = null
+let socketService: SocketService | null = null
 
 const gotLock = app.requestSingleInstanceLock()
 
@@ -18,9 +20,10 @@ if (!gotLock) {
 app.on('second-instance', (_, commandLine) => {
 	const url = commandLine.find((arg) => arg.startsWith('myapp://'))
 	if (url && mainWindow) {
-		mainWindow.webContents.send('github:callback', url)
+		mainWindow.webContents.send('be:callback', url)
 	}
 })
+
 function createWindow(): void {
 	mainWindow = new BrowserWindow({
 		width: 900,
@@ -33,6 +36,8 @@ function createWindow(): void {
 			sandbox: false,
 		},
 	})
+
+	socketService = new SocketService(mainWindow)
 
 	mainWindow.on('ready-to-show', () => {
 		mainWindow?.show()
@@ -50,39 +55,25 @@ function createWindow(): void {
 	}
 }
 
-ipcMain.handle('github:open-login', (_, url: string) => {
+ipcMain.handle('be:open-login', (_, url: string) => {
 	shell.openExternal(url)
 })
 
-ipcMain.handle('github:exchange-token', async (_, { code, codeVerifier }) => {
-	const response = await fetch('https://github.com/login/oauth/access_token', {
-		method: 'POST',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({
-			client_id: process.env.GITHUB_CLIENT_ID,
-			client_secret: process.env.GITHUB_SECRET,
-			code,
-			redirect_uri: 'myapp://oauth',
-			code_verifier: codeVerifier,
-		}),
-	})
+const backend = new BackendService()
 
-	const data = await response.json()
-	return data
-})
+ipcMain.handle(
+	'be:auth',
+	async (_, { code, codeVerifier }) => await backend.auth({ code, codeVerifier })
+)
 
-const githubAuth = new GithubApi()
+ipcMain.handle('be:refresh-token', async () => await backend.refresh())
+ipcMain.handle('be:get-user', async () => await backend.getUser())
+ipcMain.handle('be:get-repos', (_, { params }) => backend.getRepos(params))
+ipcMain.handle('be:logout', () => backend.logout())
 
-ipcMain.handle('github:get-user', () => githubAuth.getUser())
-
-ipcMain.handle('github:get-repos', (_, params) => githubAuth.getRepos(params))
-
-ipcMain.handle('github:logout', () => githubAuth.logout())
-
-ipcMain.handle('github:save-token', (_, { token }) => githubAuth.saveToken(token))
+ipcMain.handle('socket:connect', () => socketService?.connect())
+ipcMain.handle('socket:disconnect', () => socketService?.disconnect())
+ipcMain.handle('session:connect', (_, { params }) => socketService?.connectSession(params))
 
 ipcMain.handle('select-folder', async () => {
 	const result = await dialog.showOpenDialog({
@@ -159,12 +150,12 @@ app.whenReady().then(() => {
 		optimizer.watchWindowShortcuts(window)
 	})
 
-	ipcMain.on('ping', () => console.log('pong'))
-
 	createWindow()
 
 	app.on('activate', () => {
-		if (BrowserWindow.getAllWindows().length === 0) createWindow()
+		if (BrowserWindow.getAllWindows().length === 0) {
+			createWindow()
+		}
 	})
 })
 

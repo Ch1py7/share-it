@@ -1,7 +1,6 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: Backdrop intentionally handles pointer clicks to dismiss the modal. */
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: The backdrop intentionally only responds to pointer interactions. */
 import { cn } from '@renderer/lib/utils'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface ModalProps {
 	open: boolean
@@ -10,45 +9,39 @@ interface ModalProps {
 }
 
 export const Modal: React.FC<ModalProps> = ({ open, onClose, children }) => {
-	const [mounted, setMounted] = useState(open)
+	const dialogRef = useRef<HTMLDialogElement>(null)
 
 	useEffect(() => {
+		const dialog = dialogRef.current
+		if (!dialog) return
+
 		if (open) {
-			setMounted(true)
-			return
+			dialog.showModal()
+		} else {
+			dialog.close()
 		}
-
-		const timeout = setTimeout(() => {
-			setMounted(false)
-		}, 200)
-
-		return () => clearTimeout(timeout)
 	}, [open])
 
-	if (!mounted) return null
+	const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+		if (e.target === dialogRef.current) {
+			onClose()
+		}
+	}
 
 	return (
-		<div
+		<dialog
+			ref={dialogRef}
+			onClose={onClose}
+			onClick={handleBackdropClick}
 			className={cn(
-				'fixed inset-0 z-50 flex items-center justify-center',
-				'bg-black/40 backdrop-blur-xs',
-				'transition-opacity duration-200',
-				open ? 'opacity-100' : 'opacity-0'
+				'w-150 rounded-2xl bg-white p-6 shadow-2xl border-none outline-none',
+				'backdrop:bg-black/40 backdrop:backdrop-blur-xs',
+				'transition-all duration-200 allow-discrete m-auto',
+				'open:translate-y-0 open:scale-100 open:opacity-100',
+				'starting:open:translate-y-4 starting:open:scale-95 starting:open:opacity-0'
 			)}
-			onClick={onClose}
 		>
-			<div
-				role="dialog"
-				aria-modal="true"
-				onClick={(e) => e.stopPropagation()}
-				className={cn(
-					'w-150 rounded-2xl bg-white p-6 shadow-2xl',
-					'transition-all duration-200',
-					open ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-95 opacity-0'
-				)}
-			>
-				{children}
-			</div>
-		</div>
+			{children}
+		</dialog>
 	)
 }

@@ -6,17 +6,30 @@ declare global {
 		electron: {
 			openExternal(url: string): Promise<void>
 			onGithubCallback: (callback: (url: string) => void) => void
-			exchangeToken: (code: string, codeVerifier: string) => Promise<any>
 			selectFolder: () => Promise<LocalFolder>
 			selectFiles: (repositoryRoot: string) => Promise<LocalSecretFile[]>
-			github: {
-				getUser: () => Promise<any>
-				getRepos: (params?: ReposParams) => Promise<any>
+			socket: {
+				connect: () => Promise<void>
+				disconnect: () => Promise<void>
+				onConnection: (callback: () => void) => () => void
+				connectSession: (params: ConnectSession) => Promise<void>
+			}
+			be: {
 				logout: () => Promise<any>
-				saveToken: (token: string) => Promise<any>
+				getRepos: (params?: ReposParams) => Promise<CommonResponse<any>>
+				refresh: () => Promise<CommonResponse<RefreshResponse>>
+				auth: (code: string, codeVerifier: string) => Promise<CommonResponse<AuthResponse>>
+				getUser: () => Promise<CommonResponse<User>>
 			}
 		} & ElectronAPI
 	}
+}
+
+export interface ConnectSession {
+	roomId: string
+	username: string
+	userId: string
+	repositoryName: string
 }
 
 interface LocalSecretFile {
@@ -34,6 +47,41 @@ interface LocalFolder {
 	version?: string
 	shareIt?: boolean
 	url?: string
+}
+
+interface RefreshResponse {
+	accessToken: string
+}
+
+interface User {
+	id: string
+	createdAt: Date
+	updatedAt: Date
+	githubId: number
+	githubUsername: string
+	avatarUrl: string
+}
+
+interface AuthResponse {
+	accessToken: string
+	user: User
+}
+
+type CommonResponse<T> = SuccessResponse<T> | FailureResponse
+
+interface ErrorResponse {
+	message: string
+	code: string
+}
+
+interface SuccessResponse<T> {
+	success: true
+	data: T
+}
+
+interface FailureResponse {
+	success: false
+	error: ErrorResponse
 }
 
 export interface ReposParams {

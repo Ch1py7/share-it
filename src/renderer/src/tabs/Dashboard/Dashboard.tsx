@@ -1,5 +1,5 @@
 import { RepositoryCard } from '@renderer/tabs/Dashboard/RepositoryCard'
-import { GithubRepo } from '@renderer/context/user.types'
+import { GithubRepo } from '@renderer/stores/user/user.types'
 
 interface DashboardProps {
 	repos: GithubRepo[]

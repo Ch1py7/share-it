@@ -1,4 +1,4 @@
-import { Files as FilesType } from '@renderer/context/sessions/sessions.types'
+import { Files as FilesType } from '@renderer/stores/sessions/sessions.types'
 import { formatWithCommas, sizePrefix } from '@renderer/lib/utils'
 import { FileCode, Trash2 } from 'lucide-react'
 

@@ -1,14 +1,15 @@
 import { sessionStateConfig } from '@renderer/constants/states'
-import { useSessions } from '@renderer/context/sessions/sessions.context'
 import { cn } from '@renderer/lib/utils'
+import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
+import { useMemo } from 'react'
 
 export const CurrentSessions = () => {
-	const { sessionsStateQty } = useSessions()
-
-	const sessionsStates = Object.entries(sessionsStateQty)
+	const counts = useSessionsStore((state) => state.getSessionsStateQty)
+	const sessions = useSessionsStore((state) => state.sessions)
+	const sessionsStates = useMemo(() => Object.entries(counts()), [sessions])
 
 	return (
-		<div className="p-3 space-y-2 z-10 rounded-xl border border-zinc-200 bg-zinc-50">
+		<div className="p-3 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50">
 			{sessionsStates.map(([key, value]) => {
 				if (!value) return null
 				return (

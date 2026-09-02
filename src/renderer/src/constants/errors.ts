@@ -15,3 +15,9 @@ export const errorsContent: Record<Errors, { title: string; description: string 
 			"The selected folder isn't a valid Git repository. Please select the repository's root directory or clone the repository first.",
 	},
 }
+
+export enum ErrorCodes {
+	INVALID_REFRESH_TOKEN = 'INVALID_REFRESH_TOKEN',
+	SESSION_REVOKED = 'SESSION_REVOKED',
+	SESSION_EXPIRED = 'SESSION_EXPIRED',
+}

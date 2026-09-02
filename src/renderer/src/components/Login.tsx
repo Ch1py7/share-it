@@ -1,11 +1,11 @@
 import { Card } from '@renderer/components/Card'
 import { GithubIcon } from '@renderer/components/icons/Github'
-import { useUser } from '@renderer/context/user.context'
 import { GithubAuth } from '@renderer/lib/GithubAuth'
+import { useUserStore } from '@renderer/stores/user/user.store'
 import { useEffect, useRef, useState } from 'react'
 
 export const Login = () => {
-	const { setUser, setRepos } = useUser()
+	const { setUser, setRepos, setAccessToken } = useUserStore()
 	const [isLoggingIn, setIsLoggingIn] = useState(false)
 	const codeVerifier = useRef<string | null>(null)
 	const loginState = useRef<string | null>(null)
@@ -38,12 +38,15 @@ export const Login = () => {
 		const unsubscribe = window.electron.onGithubCallback(async (url) => {
 			try {
 				const code = github.waitForCallback({ url, loginState: loginState.current ?? '' })
-				const token = await window.electron.exchangeToken(code, codeVerifier.current!)
-				await window.electron.github.saveToken(token.access_token)
-				const user = await window.electron.github.getUser()
-				setUser(user)
-				const repos = await window.electron.github.getRepos()
-				setRepos(repos)
+				const auth = await window.electron.be.auth(code, codeVerifier.current!)
+				if (auth.success) {
+					setAccessToken(auth.data.accessToken)
+					setUser(auth.data.user)
+				}
+				const repos = await window.electron.be.getRepos()
+				if (repos.success) {
+					setRepos(repos.data)
+				}
 			} finally {
 				codeVerifier.current = null
 				loginState.current = null

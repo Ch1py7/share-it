@@ -1,5 +1,5 @@
 import { Errors, errorsContent } from '@renderer/constants/errors'
-import { Session } from '@renderer/context/sessions/sessions.types'
+import { Session } from '@renderer/stores/sessions/sessions.types'
 
 interface SessionStateHelperProps {
 	currentSession: Session | undefined
@@ -29,7 +29,7 @@ export const SessionStateHelper: React.FC<SessionStateHelperProps> = ({
 	}
 
 	return (
-		<div className="p-3 space-y-2 z-10 rounded-xl border border-zinc-200 bg-zinc-50">
+		<div className="p-3 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50">
 			{messages[state]}
 		</div>
 	)

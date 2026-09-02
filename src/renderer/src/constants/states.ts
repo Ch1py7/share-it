@@ -1,4 +1,4 @@
-import { States } from '@renderer/context/sessions/sessions.types'
+import { States } from '@renderer/stores/sessions/sessions.types'
 
 export const sessionStateConfig: Record<
 	States,

@@ -1,15 +1,15 @@
-import { useSessions } from '@renderer/context/sessions/sessions.context'
-import { useUser } from '@renderer/context/user.context'
-import { Bell, Search, Settings, User2, Users } from 'lucide-react'
+import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
+import { useUserStore } from '@renderer/stores/user/user.store'
+import { Bell, LogOut, Search, Settings, User2, Users } from 'lucide-react'
 import { CurrentSessions } from './CurrentSessions'
 import { Tooltip } from './Tooltip'
 
 export const Header = () => {
-	const { user } = useUser()
-	const { sessions } = useSessions()
+	const { user, logout } = useUserStore()
+	const { sessions } = useSessionsStore()
 
 	return (
-		<header className="sticky z-10 top-0 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl">
+		<header className="sticky z-50 top-0 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl">
 			<div className="flex h-16 items-center justify-between px-6">
 				<div className="flex items-center gap-3">
 					<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-white font-bold">
@@ -23,7 +23,7 @@ export const Header = () => {
 					</div>
 
 					{sessions.size > 0 && (
-						<Tooltip className="ml-3" position="bottom" content={<CurrentSessions />}>
+						<Tooltip className="ml-3" tooltipClassNames='w-full' position="bottom" content={<CurrentSessions />}>
 							<div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 py-1.5">
 								<div className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-900 text-white ms-3">
 									<Users size={14} />
@@ -74,11 +74,18 @@ export const Header = () => {
 						type="button"
 						className="ml-2 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-white transition hover:scale-105"
 					>
-						{user?.avatar_url ? (
-							<img className="rounded-full" src={user.avatar_url} alt="user" />
+						{user?.avatarUrl ? (
+							<img className="rounded-full" src={user.avatarUrl} alt="user" />
 						) : (
 							<User2 size={18} />
 						)}
+					</button>
+					<button
+						type="button"
+						className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+						onClick={logout}
+					>
+						<LogOut size={18} />
 					</button>
 				</div>
 			</div>

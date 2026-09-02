@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { ReposParams } from './index.types'
+import { ConnectSession, ReposParams } from './index.types'
 
 const api = {}
 
@@ -8,29 +8,45 @@ if (process.contextIsolated) {
 	try {
 		contextBridge.exposeInMainWorld('electron', {
 			...electronAPI,
-			openExternal: (url: string) => ipcRenderer.invoke('github:open-login', url),
-			exchangeToken: (code: string, codeVerifier: string) =>
-				ipcRenderer.invoke('github:exchange-token', {
-					code,
-					codeVerifier,
-				}),
+			openExternal: (url: string) => ipcRenderer.invoke('be:open-login', url),
 
 			onGithubCallback: (callback: (url: string) => void) => {
-				ipcRenderer.on('github:callback', (_, url) => callback(url))
+				ipcRenderer.on('be:callback', (_, url) => callback(url))
 			},
 
 			selectFolder: () => ipcRenderer.invoke('select-folder'),
 
 			selectFiles: (repositoryRoot: string) => ipcRenderer.invoke('select-files', repositoryRoot),
 
-			github: {
-				getUser: () => ipcRenderer.invoke('github:get-user'),
+			socket: {
+				connect: () => ipcRenderer.invoke('socket:connect'),
+				disconnect: () => ipcRenderer.invoke('socket:disconnect'),
+				onConnection: (callback: () => void) => {
+					const listener = (_: Electron.IpcRendererEvent) => {
+						callback()
+					}
+					ipcRenderer.on('socket:connection', listener)
 
-				getRepos: (params: ReposParams) => ipcRenderer.invoke('github:get-repos', params),
+					return () => {
+						ipcRenderer.removeListener('socket:connection', listener)
+					}
+				},
+				connectSession: (params: ConnectSession) =>
+					ipcRenderer.invoke('session:connect', { params }),
+			},
 
-				logout: () => ipcRenderer.invoke('github:logout'),
+			be: {
+				auth: (code: string, codeVerifier: string) => {
+					return ipcRenderer.invoke('be:auth', {
+						code,
+						codeVerifier,
+					})
+				},
 
-				saveToken: (token: string) => ipcRenderer.invoke('github:save-token', { token }),
+				refresh: () => ipcRenderer.invoke('be:refresh-token'),
+				logout: () => ipcRenderer.invoke('be:logout'),
+				getUser: () => ipcRenderer.invoke('be:get-user'),
+				getRepos: (params: ReposParams) => ipcRenderer.invoke('be:get-repos', { params }),
 			},
 		})
 
@@ -42,7 +58,7 @@ if (process.contextIsolated) {
 	// @ts-expect-error
 	window.electron = {
 		...electronAPI,
-		openExternal: (url: string) => ipcRenderer.invoke('github:open-login', url),
+		openExternal: (url: string) => ipcRenderer.invoke('be:open-login', url),
 	}
 
 	// @ts-expect-error

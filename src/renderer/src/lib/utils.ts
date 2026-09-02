@@ -1,4 +1,4 @@
-import { Files } from '@renderer/context/sessions/sessions.types'
+import { Files } from '@renderer/stores/sessions/sessions.types'
 import clsx from 'clsx'
 import { ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'

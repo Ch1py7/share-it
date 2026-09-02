@@ -1,9 +1,9 @@
 import { CrownIcon, Lock, User } from 'lucide-react'
 import { Modal } from './Modal'
 import { RoleCard } from './RoleCard'
-import { GithubRepo } from '@renderer/context/user.types'
-import { useSessions } from '@renderer/context/sessions/sessions.context'
-import { SessionRole } from '@renderer/context/sessions/sessions.types'
+import { GithubRepo } from '@renderer/stores/user/user.types'
+import { SessionRole } from '@renderer/stores/sessions/sessions.types'
+import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 
 interface CreateSessionModalProps {
 	isOpen: boolean
@@ -16,7 +16,7 @@ export const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 	onCancel,
 	selectedRepo,
 }) => {
-	const { addSession } = useSessions()
+	const { addSession } = useSessionsStore()
 	const onClick = (repositoryId: number, role: SessionRole) => {
 		addSession(repositoryId, role)
 		onCancel()

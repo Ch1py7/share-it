@@ -1,18 +1,18 @@
 import { Card } from '@renderer/components/Card'
 import { ErrorFallback } from '@renderer/components/ErrorFallback'
 import { Errors } from '@renderer/constants/errors'
-import { useSessions } from '@renderer/context/sessions/sessions.context'
-import { GithubRepo } from '@renderer/context/user.types'
+import { GithubRepo } from '@renderer/stores/user/user.types'
 import { useErrors } from '@renderer/hooks/useErrors'
 import { ArrowLeft, FolderCode, FolderOpen, Trash2 } from 'lucide-react'
 import { AddFiles } from './AddFiles'
 import { Files } from './Files'
-import { Files as FilesType, States } from '@renderer/context/sessions/sessions.types'
+import { Files as FilesType, States } from '@renderer/stores/sessions/sessions.types'
 import { useState } from 'react'
 import { Tooltip } from '@renderer/components/Tooltip'
 import { SessionStateHelper } from '@renderer/components/SessionStateHelper'
 import { cn } from '@renderer/lib/utils'
 import { sessionStateConfig } from '@renderer/constants/states'
+import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 
 interface ActiveRepositoryProps {
 	repo: GithubRepo
@@ -22,7 +22,7 @@ interface ActiveRepositoryProps {
 export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack }) => {
 	const [filesToDelete, setFilesToDelete] = useState<FilesType[]>([])
 	const { getCurrentSession, setSessionRepository, setSessionFiles, removeSessionFiles } =
-		useSessions()
+		useSessionsStore()
 	const {
 		error,
 		customMessage,

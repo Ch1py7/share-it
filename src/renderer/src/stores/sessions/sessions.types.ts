@@ -28,9 +28,8 @@ export type States = 'disconnected' | 'error' | 'connected' | 'loading' | 'pendi
 
 export type SessionsStateQty = Record<States, number>
 
-export interface SessionsContextType {
+export interface SessionsState {
 	sessions: Map<number, Session>
-	sessionsStateQty: SessionsStateQty
 	addSession: (repositoryId: number, role: SessionRole) => void
 	getCurrentSession: (repositoryId: number) => Session | undefined
 	hasSession: (repositoryId: number) => boolean
@@ -38,4 +37,5 @@ export interface SessionsContextType {
 	setSessionFiles: (repositoryId: number, files: Files[]) => void
 	removeSessionFiles: (repositoryId: number, files: Files[]) => void
 	setSessionState: (repositoryId: number, state: States) => void
+	getSessionsStateQty: () => SessionsStateQty
 }

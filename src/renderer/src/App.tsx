@@ -1,24 +1,21 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 import { Header } from './components/Header'
 import { Loading } from './components/Loading'
-import { useUser } from './context/user.context'
 import { Login } from './components/Login'
-import { GithubRepo } from './context/user.types'
+import { GithubRepo } from './stores/user/user.types'
 import { CreateSessionModal } from './components/CreateSessionsModal'
-import { useSessions } from './context/sessions/sessions.context'
 import { ActiveRepository } from './tabs/ActiveRepository/ActiveRepository'
 import { Repositories } from './tabs/Dashboard/Dashboard'
+import { useSessionsStore } from './stores/sessions/sessions.store'
+import { useUserStore } from './stores/user/user.store'
+import { Initializer } from './components/Initializer'
 
 export const App = () => {
-	const { sessions, hasSession } = useSessions()
-	const { user, loading, repos } = useUser()
+	const { sessions, hasSession } = useSessionsStore()
+	const { user, loading, repos } = useUserStore()
 	const [isOpen, setIsOpen] = useState(false)
 	const [selectedRepo, setSelectedRepo] = useState<GithubRepo | null>(null)
-
-	if (loading) {
-		return <Loading />
-	}
 
 	const sessionIds = new Set(sessions.keys())
 	const sortedRepos =
@@ -42,23 +39,58 @@ export const App = () => {
 
 	const isSelectedActiveRepo = selectedRepo && hasSession(selectedRepo.id)
 
-	if (user) {
-		return (
-			<div className="h-screen w-screen flex flex-col">
-				{selectedRepo && (
-					<CreateSessionModal isOpen={isOpen} onCancel={onCancel} selectedRepo={selectedRepo} />
-				)}
-				<Header />
-				<div className="flex-1 min-h-0 overflow-x-hidden">
-					{isSelectedActiveRepo ? (
-						<ActiveRepository repo={selectedRepo} onBack={onCancel} />
-					) : (
-						<Repositories repos={sortedRepos} onClick={handleSelectRepository} />
-					)}
-				</div>
-			</div>
-		)
+	const [connected, setConnected] = useState(false)
+
+	const handleConnect = async () => {
+		await window.electron.socket.connect()
 	}
 
-	return <Login />
+	const handleConnectSession = async () => {
+		await window.electron.socket.connectSession({
+			roomId: 'waaa',
+			userId: 'waaa',
+			username: 'waaa',
+			repositoryName: 'jesucristo',
+		})
+	}
+
+	const handleDisconnect = async () => {
+		await window.electron.socket.disconnect()
+		setConnected(false)
+	}
+
+	useEffect(() => {
+		const unsubscribe = window.electron.socket.onConnection(() => {
+			setConnected(true)
+		})
+
+		return () => {
+			unsubscribe()
+		}
+	}, [])
+
+	return (
+		<>
+			<Initializer />
+			{loading ? (
+				<Loading />
+			) : user ? (
+				<div className="h-screen w-screen flex flex-col">
+					{selectedRepo && (
+						<CreateSessionModal isOpen={isOpen} onCancel={onCancel} selectedRepo={selectedRepo} />
+					)}
+					<Header />
+					<div className="flex-1 min-h-0 overflow-x-hidden">
+						{isSelectedActiveRepo ? (
+							<ActiveRepository repo={selectedRepo} onBack={onCancel} />
+						) : (
+							<Repositories repos={sortedRepos} onClick={handleSelectRepository} />
+						)}
+					</div>
+				</div>
+			) : (
+				<Login />
+			)}
+		</>
+	)
 }
