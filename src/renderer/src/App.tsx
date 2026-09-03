@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import './App.css'
 import { Header } from './components/Header'
 import { Loading } from './components/Loading'
@@ -10,6 +10,7 @@ import { Repositories } from './tabs/Dashboard/Dashboard'
 import { useSessionsStore } from './stores/sessions/sessions.store'
 import { useUserStore } from './stores/user/user.store'
 import { Initializer } from './components/Initializer'
+import { SocketHandler } from './components/SocketHandler'
 
 export const App = () => {
 	const { sessions, hasSession } = useSessionsStore()
@@ -39,38 +40,9 @@ export const App = () => {
 
 	const isSelectedActiveRepo = selectedRepo && hasSession(selectedRepo.id)
 
-	const [connected, setConnected] = useState(false)
-
-	const handleConnect = async () => {
-		await window.electron.socket.connect()
-	}
-
-	const handleConnectSession = async () => {
-		await window.electron.socket.connectSession({
-			roomId: 'waaa',
-			userId: 'waaa',
-			username: 'waaa',
-			repositoryName: 'jesucristo',
-		})
-	}
-
-	const handleDisconnect = async () => {
-		await window.electron.socket.disconnect()
-		setConnected(false)
-	}
-
-	useEffect(() => {
-		const unsubscribe = window.electron.socket.onConnection(() => {
-			setConnected(true)
-		})
-
-		return () => {
-			unsubscribe()
-		}
-	}, [])
-
 	return (
 		<>
+			<SocketHandler />
 			<Initializer />
 			{loading ? (
 				<Loading />

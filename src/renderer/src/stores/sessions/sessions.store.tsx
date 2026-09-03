@@ -12,6 +12,11 @@ export const useSessionsStore = create<SessionsState>()((set, get) => ({
 		})
 		set({ sessions: next })
 	},
+	removeSession: (repositoryId) => {
+		const next = new Map(get().sessions)
+		next.delete(repositoryId)
+		set({ sessions: next })
+	},
 	getCurrentSession: (repositoryId) => get().sessions.get(repositoryId),
 	hasSession: (repositoryId) => get().sessions.has(repositoryId),
 	setSessionRepository: (repositoryId, repository) => {

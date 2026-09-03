@@ -1,8 +1,9 @@
 import { io, Socket } from 'socket.io-client'
 import type { BrowserWindow } from 'electron'
+import { ClientToServerEvents, ServerToClientEvents } from './socket.types'
 
 export class SocketService {
-	private socket: Socket | null = null
+	private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null
 	private readonly window: BrowserWindow
 
 	constructor(window: BrowserWindow) {
@@ -33,7 +34,15 @@ export class SocketService {
 		})
 
 		this.socket.on('notification', (data) => {
-			console.log(data)
+			this.window.webContents.send('notification', data)
+		})
+
+		this.socket.on('session:notification', (data) => {
+			this.window.webContents.send('session:notification', data)
+		})
+
+		this.socket.on('status', (data) => {
+			this.window.webContents.send('status', { ...data, repoId: Number(data.repoId) })
 		})
 	}
 
@@ -42,11 +51,15 @@ export class SocketService {
 		this.socket = null
 	}
 
-	public connectSession({ repositoryName, roomId, username, userId }) {
+	public connectSession({ repositoryName, repoId, username, userId }) {
 		if (!this.socket) {
 			this.connect()
 		}
 
-		this.socket?.emit('session:connect', { repositoryName, roomId, username, userId })
+		this.socket?.emit('session:connect', { repositoryName, repoId, username, userId })
+	}
+
+	public disconnectSession({ repositoryName, repoId, username }) {
+		this.socket?.emit('session:disconnect', { repositoryName, repoId, username })
 	}
 }

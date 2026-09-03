@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { ConnectSession, ReposParams } from './index.types'
+import { ConnectSession, DisconnectSession, ReposParams } from './index.types'
 
 const api = {}
 
@@ -31,8 +31,40 @@ if (process.contextIsolated) {
 						ipcRenderer.removeListener('socket:connection', listener)
 					}
 				},
+				onStatus: (callback: (data) => void) => {
+					const listener = (_: Electron.IpcRendererEvent, ...args) => {
+						callback(args[0])
+					}
+					ipcRenderer.on('status', listener)
+
+					return () => {
+						ipcRenderer.removeListener('status', listener)
+					}
+				},
+				onNotification: (callback: (data) => void) => {
+					const listener = (_: Electron.IpcRendererEvent, ...args) => {
+						callback(args[0])
+					}
+					ipcRenderer.on('notification', listener)
+
+					return () => {
+						ipcRenderer.removeListener('notification', listener)
+					}
+				},
+				onSessionNotification: (callback: (data) => void) => {
+					const listener = (_: Electron.IpcRendererEvent, ...args) => {
+						callback(args[0])
+					}
+					ipcRenderer.on('session:notification', listener)
+
+					return () => {
+						ipcRenderer.removeListener('session:notification', listener)
+					}
+				},
 				connectSession: (params: ConnectSession) =>
 					ipcRenderer.invoke('session:connect', { params }),
+				disconnectSession: (params: DisconnectSession) =>
+					ipcRenderer.invoke('session:disconnect', { params }),
 			},
 
 			be: {

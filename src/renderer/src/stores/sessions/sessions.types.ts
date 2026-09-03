@@ -31,6 +31,7 @@ export type SessionsStateQty = Record<States, number>
 export interface SessionsState {
 	sessions: Map<number, Session>
 	addSession: (repositoryId: number, role: SessionRole) => void
+	removeSession: (repositoryId: number) => void
 	getCurrentSession: (repositoryId: number) => Session | undefined
 	hasSession: (repositoryId: number) => boolean
 	setSessionRepository: (repositoryId: number, repository: Session['repository']) => void

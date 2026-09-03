@@ -19,7 +19,7 @@ export const SessionStateHelper: React.FC<SessionStateHelperProps> = ({
 		pending:
 			role === 'collaborator'
 				? 'Your session is ready. Click Connect to join the collaboration session.'
-				: 'Your session is ready. Click Create to start the collaboration session.',
+				: 'Your session is ready. Click Create Session to start the collaboration session.',
 		loading: 'Your session is starting. This may take a moment.',
 		connected:
 			role === 'collaborator'

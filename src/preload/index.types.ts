@@ -12,7 +12,11 @@ declare global {
 				connect: () => Promise<void>
 				disconnect: () => Promise<void>
 				onConnection: (callback: () => void) => () => void
+				onNotification: (callback: (data: Notification) => void) => () => void
+				onSessionNotification: (callback: (data: Notification) => void) => () => void
+				onStatus: (callback: (data: Status) => void) => () => void
 				connectSession: (params: ConnectSession) => Promise<void>
+				disconnectSession: (params: DisconnectSession) => Promise<void>
 			}
 			be: {
 				logout: () => Promise<any>
@@ -26,11 +30,24 @@ declare global {
 }
 
 export interface ConnectSession {
-	roomId: string
+	repoId: string
 	username: string
-	userId: string
+	userId: number
 	repositoryName: string
 }
+
+export type DisconnectSession = Omit<ConnectSession, 'userId'>
+
+interface Notification {
+	title: string
+	description: string
+}
+interface Status {
+	repoId: number
+	status: States
+}
+
+export type States = 'disconnected' | 'error' | 'connected' | 'loading' | 'pending'
 
 interface LocalSecretFile {
 	name: string

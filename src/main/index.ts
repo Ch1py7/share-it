@@ -74,6 +74,7 @@ ipcMain.handle('be:logout', () => backend.logout())
 ipcMain.handle('socket:connect', () => socketService?.connect())
 ipcMain.handle('socket:disconnect', () => socketService?.disconnect())
 ipcMain.handle('session:connect', (_, { params }) => socketService?.connectSession(params))
+ipcMain.handle('session:disconnect', (_, { params }) => socketService?.disconnectSession(params))
 
 ipcMain.handle('select-folder', async () => {
 	const result = await dialog.showOpenDialog({

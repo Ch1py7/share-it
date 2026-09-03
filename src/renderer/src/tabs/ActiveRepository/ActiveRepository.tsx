@@ -3,7 +3,7 @@ import { ErrorFallback } from '@renderer/components/ErrorFallback'
 import { Errors } from '@renderer/constants/errors'
 import { GithubRepo } from '@renderer/stores/user/user.types'
 import { useErrors } from '@renderer/hooks/useErrors'
-import { ArrowLeft, FolderCode, FolderOpen, Trash2 } from 'lucide-react'
+import { ArrowLeft, Ban, FolderCode, FolderOpen, Rocket, Trash2 } from 'lucide-react'
 import { AddFiles } from './AddFiles'
 import { Files } from './Files'
 import { Files as FilesType, States } from '@renderer/stores/sessions/sessions.types'
@@ -13,6 +13,7 @@ import { SessionStateHelper } from '@renderer/components/SessionStateHelper'
 import { cn } from '@renderer/lib/utils'
 import { sessionStateConfig } from '@renderer/constants/states'
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
+import { useUserStore } from '@renderer/stores/user/user.store'
 
 interface ActiveRepositoryProps {
 	repo: GithubRepo
@@ -21,8 +22,14 @@ interface ActiveRepositoryProps {
 
 export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack }) => {
 	const [filesToDelete, setFilesToDelete] = useState<FilesType[]>([])
-	const { getCurrentSession, setSessionRepository, setSessionFiles, removeSessionFiles } =
-		useSessionsStore()
+	const {
+		getCurrentSession,
+		setSessionRepository,
+		setSessionFiles,
+		removeSessionFiles,
+		removeSession,
+	} = useSessionsStore()
+	const { user } = useUserStore()
 	const {
 		error,
 		customMessage,
@@ -59,8 +66,35 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 		setSessionFiles(repo.id, files)
 	}
 
-	const onDelete = (files: FilesType[]) => {
+	const onDeleteFiles = (files: FilesType[]) => {
 		removeSessionFiles(repo.id, files)
+	}
+
+	const onDeleteSession = async () => {
+		if (currentSession?.state === 'connected') {
+			await handleDisonnectSession()
+		}
+
+		removeSession(repo.id)
+	}
+
+	const handleConnectSession = async () => {
+		if (!user) return
+		await window.electron.socket.connectSession({
+			repoId: repo.id.toString(),
+			userId: user.githubId,
+			username: user.githubUsername,
+			repositoryName: repo.name,
+		})
+	}
+
+	const handleDisonnectSession = async () => {
+		if (!user) return
+		await window.electron.socket.disconnectSession({
+			repoId: repo.id.toString(),
+			username: user.githubUsername,
+			repositoryName: repo.name,
+		})
 	}
 
 	return (
@@ -74,7 +108,6 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 					>
 						<ArrowLeft size={18} />
 					</button>
-
 					<Tooltip
 						position="bottom"
 						content={<SessionStateHelper currentSession={currentSession} error={error} />}
@@ -91,23 +124,53 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 					</Tooltip>
 				</div>
 
-				<Tooltip
-					position="bottom"
-					content={<SessionStateHelper currentSession={currentSession} error={error} />}
-					align="right"
-					tooltipClassNames="w-2/1"
-				>
-					<div
-						className={cn(
-							'flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium',
-							sessionStateConfig[sessionState].bg,
-							sessionStateConfig[sessionState].text
-						)}
+				<div className="flex gap-2 items-center">
+					{sessionState === 'pending' && (
+						<button
+							type="button"
+							className="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-1 text-sm font-medium text-white shadow-sm transition-all hover:bg-violet-700 hover:shadow-md"
+							onClick={handleConnectSession}
+						>
+							<Rocket size={16} />
+							Create Session
+						</button>
+					)}
+					{sessionState === 'connected' && (
+						<button
+							type="button"
+							className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-1 text-sm font-medium text-white shadow-sm transition-all hover:bg-red-700 hover:shadow-md"
+							onClick={handleDisonnectSession}
+						>
+							<Ban size={16} />
+							Disconnect
+						</button>
+					)}
+					<Tooltip
+						position="bottom"
+						content={<SessionStateHelper currentSession={currentSession} error={error} />}
+						align="right"
+						tooltipClassNames="w-2/1"
 					>
-						<div className={cn('h-2 w-2 rounded-full', sessionStateConfig[sessionState].color)} />
-						{sessionStateConfig[sessionState].label}
-					</div>
-				</Tooltip>
+						<div
+							className={cn(
+								'flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium',
+								sessionStateConfig[sessionState].bg,
+								sessionStateConfig[sessionState].text
+							)}
+						>
+							<div className={cn('h-2 w-2 rounded-full', sessionStateConfig[sessionState].color)} />
+							{sessionStateConfig[sessionState].label}
+						</div>
+					</Tooltip>
+					<button
+						type="button"
+						onClick={onDeleteSession}
+						className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-red-50 hover:text-red-600"
+						title="Delete session"
+					>
+						<Trash2 size={17} />
+					</button>
+				</div>
 			</div>
 			{error && (
 				<ErrorFallback error={error} onClose={onClose}>
@@ -156,7 +219,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 							{Boolean(filesToDelete.length) && (
 								<button
 									type="button"
-									onClick={() => onDelete(filesToDelete)}
+									onClick={() => onDeleteFiles(filesToDelete)}
 									className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-red-50 hover:text-red-600"
 								>
 									<Trash2 size={15} />
@@ -167,7 +230,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 					{currentSession.files && (
 						<Files
 							files={currentSession.files}
-							onDelete={onDelete}
+							onDelete={onDeleteFiles}
 							filesToDelete={filesToDelete}
 							setFilesToDelete={setFilesToDelete}
 						/>
