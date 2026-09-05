@@ -34,5 +34,15 @@ export const SocketHandler = () => {
 		}
 	}, [])
 
+	useEffect(() => {
+		const unsubscribe = window.electron.socket.onFilesOfferReceived((files) => {
+			console.log(files)
+		})
+
+		return () => {
+			unsubscribe()
+		}
+	}, [])
+
 	return null
 }

@@ -1,8 +1,8 @@
-import { Errors } from '@renderer/constants/errors'
+import { REPOSITORY_ERRORS } from '@renderer/constants/errors'
 import { useState } from 'react'
 
 export const useErrors = () => {
-	const [error, setError] = useState<Errors | null>(null)
+	const [error, setError] = useState<REPOSITORY_ERRORS | null>(null)
 	const [customMessage, setCustomMessage] = useState('')
 
 	const onClose = () => {
@@ -10,11 +10,11 @@ export const useErrors = () => {
 	}
 
 	const setInvalidRepository = () => {
-		setError(Errors.INVALID_REPOSITORY)
+		setError(REPOSITORY_ERRORS.INVALID_REPOSITORY)
 	}
 
 	const setDifferentRepository = () => {
-		setError(Errors.DIFFERENT_REPOSITORY)
+		setError(REPOSITORY_ERRORS.DIFFERENT_REPOSITORY)
 	}
 
 	return {

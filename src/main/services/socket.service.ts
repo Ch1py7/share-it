@@ -1,6 +1,12 @@
 import { io, Socket } from 'socket.io-client'
 import type { BrowserWindow } from 'electron'
-import { ClientToServerEvents, ServerToClientEvents } from './socket.types'
+import { ClientToServerEvents, ConnectSession, ServerToClientEvents } from './socket.types'
+import {
+	AcceptFiles,
+	DeliverFilesPayload,
+	DisconnectSession,
+	ShareFiles,
+} from '../../preload/index.types'
 
 export class SocketService {
 	private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null
@@ -44,6 +50,22 @@ export class SocketService {
 		this.socket.on('status', (data) => {
 			this.window.webContents.send('status', { ...data, repoId: Number(data.repoId) })
 		})
+
+		this.socket.on('session:files-offer-received', (data) => {
+			this.window.webContents.send('session:files-offer-received', data)
+		})
+
+		this.socket.on('session:peer-requested-data', (data) => {
+			this.window.webContents.send('session:peer-requested-data', data)
+		})
+
+		this.socket.on('session:error', (data) => {
+			this.window.webContents.send('session:error', data)
+		})
+
+		this.socket.on('session:files-delivery', (data) => {
+			this.window.webContents.send('session:files-delivery', data)
+		})
 	}
 
 	public disconnect() {
@@ -51,15 +73,27 @@ export class SocketService {
 		this.socket = null
 	}
 
-	public connectSession({ repositoryName, repoId, username, userId }) {
+	public connectSession(payload: ConnectSession) {
 		if (!this.socket) {
 			this.connect()
 		}
 
-		this.socket?.emit('session:connect', { repositoryName, repoId, username, userId })
+		this.socket?.emit('session:connect', payload)
 	}
 
-	public disconnectSession({ repositoryName, repoId, username }) {
-		this.socket?.emit('session:disconnect', { repositoryName, repoId, username })
+	public disconnectSession(payload: DisconnectSession) {
+		this.socket?.emit('session:disconnect', payload)
+	}
+
+	public shareFiles(payload: ShareFiles) {
+		this.socket?.emit('session:share-files', payload)
+	}
+
+	public acceptFiles(payload: AcceptFiles) {
+		this.socket?.emit('session:accept-files', payload)
+	}
+
+	public deliverFilesPayload(payload: DeliverFilesPayload) {
+		this.socket?.emit('session:deliver-files-payload', payload)
 	}
 }

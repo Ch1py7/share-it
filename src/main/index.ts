@@ -75,6 +75,11 @@ ipcMain.handle('socket:connect', () => socketService?.connect())
 ipcMain.handle('socket:disconnect', () => socketService?.disconnect())
 ipcMain.handle('session:connect', (_, { params }) => socketService?.connectSession(params))
 ipcMain.handle('session:disconnect', (_, { params }) => socketService?.disconnectSession(params))
+ipcMain.handle('session:share-files', (_, { params }) => socketService?.shareFiles(params))
+ipcMain.handle('session:accept-files', (_, { params }) => socketService?.acceptFiles(params))
+ipcMain.handle('session:deliver-files-payload', (_, { params }) =>
+	socketService?.deliverFilesPayload(params)
+)
 
 ipcMain.handle('select-folder', async () => {
 	const result = await dialog.showOpenDialog({

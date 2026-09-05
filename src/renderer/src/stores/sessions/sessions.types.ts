@@ -4,7 +4,7 @@ export interface Session {
 	role: SessionRole
 	state: States
 	repository?: Repository
-	files?: Files[]
+	files: Files[]
 }
 
 export interface Repository {

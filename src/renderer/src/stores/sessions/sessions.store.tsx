@@ -9,6 +9,7 @@ export const useSessionsStore = create<SessionsState>()((set, get) => ({
 		next.set(repositoryId, {
 			role,
 			state: 'disconnected',
+			files: [],
 		})
 		set({ sessions: next })
 	},
@@ -61,7 +62,7 @@ export const useSessionsStore = create<SessionsState>()((set, get) => ({
 			set({ sessions: prev })
 			return
 		}
-		const rest = current.files?.filter(
+		const rest = current.files.filter(
 			(f) => !deletedFiles.map((d) => d.relativePath).includes(f.relativePath)
 		)
 
@@ -74,6 +75,7 @@ export const useSessionsStore = create<SessionsState>()((set, get) => ({
 
 		set({ sessions: next })
 	},
+
 	setSessionState: (repositoryId, state) => {
 		const prev = get().sessions
 		const current = prev.get(repositoryId)

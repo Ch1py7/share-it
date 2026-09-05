@@ -1,9 +1,9 @@
-import { errorsContent, Errors } from '@renderer/constants/errors'
+import { errorsContent, REPOSITORY_ERRORS } from '@renderer/constants/errors'
 import { ChevronDown, ChevronUp, CircleAlert } from 'lucide-react'
 import { useState } from 'react'
 
 interface ErrorFallbackProps {
-	error: Errors
+	error: REPOSITORY_ERRORS
 	children?: React.ReactNode
 	onClose: () => void
 }

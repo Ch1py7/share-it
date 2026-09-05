@@ -7,6 +7,7 @@ interface TooltipProps {
 	className?: string
 	tooltipClassNames?: string
 	align?: 'left' | 'center' | 'right' | 'top' | 'bottom'
+	disabled?: boolean
 }
 
 const positionClasses = {
@@ -46,6 +47,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
 	tooltipClassNames,
 	position = 'top',
 	align = 'left',
+	disabled,
 }) => {
 	return (
 		<div className={cn('relative inline-block group z-10', className)}>
@@ -53,6 +55,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
 			<div
 				role="tooltip"
 				className={cn(
+					disabled && 'hidden',
 					'absolute opacity-0 group-hover:opacity-100',
 					'pointer-events-none transition-all duration-200',
 					'group-hover:pointer-events-auto',

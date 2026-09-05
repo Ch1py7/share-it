@@ -11,12 +11,22 @@ declare global {
 			socket: {
 				connect: () => Promise<void>
 				disconnect: () => Promise<void>
+
 				onConnection: (callback: () => void) => () => void
-				onNotification: (callback: (data: Notification) => void) => () => void
-				onSessionNotification: (callback: (data: Notification) => void) => () => void
-				onStatus: (callback: (data: Status) => void) => () => void
+				onNotification: (callback: (data: OnNotification) => void) => () => void
+				onSessionNotification: (callback: (data: OnNotification) => void) => () => void
+				onStatus: (callback: (data: OnStatus) => void) => () => void
+				onFilesOfferReceived: (callback: (data: OnFilesOfferReceived) => void) => () => void
+				onPeerRequestedData: (callback: (data: OnPeerRequestedData) => void) => () => void
+				onFilesDelivery: (callback: (data: OnFilesDelivery) => void) => () => void
+				onError: (callback: (data: OnError) => void) => () => void
+
 				connectSession: (params: ConnectSession) => Promise<void>
 				disconnectSession: (params: DisconnectSession) => Promise<void>
+
+				shareFiles: (params: ShareFiles) => Promise<void>
+				acceptFiles: (params: AcceptFiles) => Promise<void>
+				deliverFilesPayload: (params: DeliverFilesPayload) => Promise<void>
 			}
 			be: {
 				logout: () => Promise<any>
@@ -29,6 +39,44 @@ declare global {
 	}
 }
 
+export interface ShareFiles {
+	repoId: string
+	filenames: string
+}
+
+export interface AcceptFiles {
+	offerId: string
+	senderId: string
+}
+
+export interface DeliverFilesPayload {
+	receiverId: string
+	filenames: string
+	fileContent: string
+}
+
+interface OnFilesOfferReceived {
+	offerId: string
+	filenames: string
+	senderId: string
+	senderName: string
+}
+
+interface OnPeerRequestedData {
+	offerId: string
+	receiverId: string
+	senderName: string
+}
+
+interface OnError {
+	message: string
+}
+
+interface OnFilesDelivery {
+	filenames: string
+	fileContent: string
+}
+
 export interface ConnectSession {
 	repoId: string
 	username: string
@@ -38,11 +86,11 @@ export interface ConnectSession {
 
 export type DisconnectSession = Omit<ConnectSession, 'userId'>
 
-interface Notification {
+interface OnNotification {
 	title: string
 	description: string
 }
-interface Status {
+interface OnStatus {
 	repoId: number
 	status: States
 }

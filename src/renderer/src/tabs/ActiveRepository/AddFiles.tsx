@@ -11,7 +11,7 @@ export const AddFiles: React.FC<AddFilesProps> = ({ onClick, full }) => {
 		<div className={cn('border-t border-zinc-200 p-8', full && 'h-full')}>
 			<div
 				className={cn(
-					'hidden lg:flex items-center justify-center flex-col rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 p-10 text-center transition hover:border-zinc-300',
+					'hidden sm:flex items-center justify-center flex-col rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 p-10 text-center transition hover:border-zinc-300',
 					full && 'h-full'
 				)}
 			>
@@ -33,7 +33,7 @@ export const AddFiles: React.FC<AddFilesProps> = ({ onClick, full }) => {
 					Select Files
 				</button>
 			</div>
-			<div className="lg:hidden flex items-center gap-4">
+			<div className="sm:hidden flex items-center gap-4">
 				<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
 					<FolderCode size={28} />
 				</div>

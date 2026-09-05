@@ -1,9 +1,9 @@
-import { Errors, errorsContent } from '@renderer/constants/errors'
+import { REPOSITORY_ERRORS, errorsContent } from '@renderer/constants/errors'
 import { Session } from '@renderer/stores/sessions/sessions.types'
 
 interface SessionStateHelperProps {
 	currentSession: Session | undefined
-	error?: Errors | null
+	error?: REPOSITORY_ERRORS | null
 }
 
 export const SessionStateHelper: React.FC<SessionStateHelperProps> = ({
@@ -18,8 +18,8 @@ export const SessionStateHelper: React.FC<SessionStateHelperProps> = ({
 			'This session is not linked to a local repository yet. Link a local folder to continue.',
 		pending:
 			role === 'collaborator'
-				? 'Your session is ready. Click Connect to join the collaboration session.'
-				: 'Your session is ready. Click Create Session to start the collaboration session.',
+				? 'Your repository is ready. Click Connect to join the collaboration session.'
+				: 'Your repository is ready. Click Create Session to start the collaboration session.',
 		loading: 'Your session is starting. This may take a moment.',
 		connected:
 			role === 'collaborator'

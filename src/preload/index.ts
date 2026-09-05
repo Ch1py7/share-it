@@ -1,6 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { ConnectSession, DisconnectSession, ReposParams } from './index.types'
+import {
+	AcceptFiles,
+	ConnectSession,
+	DeliverFilesPayload,
+	DisconnectSession,
+	ReposParams,
+	ShareFiles,
+} from './index.types'
+import { notifications } from './listeners/notifications'
+import { session } from './listeners/session'
 
 const api = {}
 
@@ -21,6 +30,7 @@ if (process.contextIsolated) {
 			socket: {
 				connect: () => ipcRenderer.invoke('socket:connect'),
 				disconnect: () => ipcRenderer.invoke('socket:disconnect'),
+
 				onConnection: (callback: () => void) => {
 					const listener = (_: Electron.IpcRendererEvent) => {
 						callback()
@@ -41,30 +51,18 @@ if (process.contextIsolated) {
 						ipcRenderer.removeListener('status', listener)
 					}
 				},
-				onNotification: (callback: (data) => void) => {
-					const listener = (_: Electron.IpcRendererEvent, ...args) => {
-						callback(args[0])
-					}
-					ipcRenderer.on('notification', listener)
+				...notifications(ipcRenderer),
+				...session(ipcRenderer),
 
-					return () => {
-						ipcRenderer.removeListener('notification', listener)
-					}
-				},
-				onSessionNotification: (callback: (data) => void) => {
-					const listener = (_: Electron.IpcRendererEvent, ...args) => {
-						callback(args[0])
-					}
-					ipcRenderer.on('session:notification', listener)
-
-					return () => {
-						ipcRenderer.removeListener('session:notification', listener)
-					}
-				},
-				connectSession: (params: ConnectSession) =>
-					ipcRenderer.invoke('session:connect', { params }),
 				disconnectSession: (params: DisconnectSession) =>
 					ipcRenderer.invoke('session:disconnect', { params }),
+				connectSession: (params: ConnectSession) =>
+					ipcRenderer.invoke('session:connect', { params }),
+				shareFiles: (params: ShareFiles) => ipcRenderer.invoke('session:share-files', { params }),
+				acceptFiles: (params: AcceptFiles) =>
+					ipcRenderer.invoke('session:accept-files', { params }),
+				deliverFilesPayload: (params: DeliverFilesPayload) =>
+					ipcRenderer.invoke('session:deliver-files-payload', { params }),
 			},
 
 			be: {
