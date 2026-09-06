@@ -17,6 +17,7 @@ export interface Repository {
 }
 
 export interface Files {
+	id: string
 	name: string
 	relativePath: string
 	content: string
@@ -30,13 +31,11 @@ export type SessionsStateQty = Record<States, number>
 
 export interface SessionsState {
 	sessions: Map<number, Session>
-	addSession: (repositoryId: number, role: SessionRole) => void
-	removeSession: (repositoryId: number) => void
-	getCurrentSession: (repositoryId: number) => Session | undefined
-	hasSession: (repositoryId: number) => boolean
-	setSessionRepository: (repositoryId: number, repository: Session['repository']) => void
-	setSessionFiles: (repositoryId: number, files: Files[]) => void
-	removeSessionFiles: (repositoryId: number, files: Files[]) => void
-	setSessionState: (repositoryId: number, state: States) => void
+	addSession: (repoId: number, role: SessionRole) => void
+	removeSession: (repoId: number) => void
+	setSessionRepository: (repoId: number, repository: Session['repository']) => void
+	setSessionFiles: (repoId: number, files: Files[]) => void
+	removeSessionFiles: (repoId: number, files: Files[]) => void
+	setSessionState: (repoId: number, state: States) => void
 	getSessionsStateQty: () => SessionsStateQty
 }

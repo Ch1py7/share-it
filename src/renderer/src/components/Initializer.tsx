@@ -3,7 +3,10 @@ import { useUserStore } from '@renderer/stores/user/user.store'
 import { useCallback, useEffect } from 'react'
 
 export const Initializer = () => {
-	const { setUser, setRepos, setLoading, clear } = useUserStore()
+	const setUser = useUserStore((state) => state.setUser)
+	const setRepos = useUserStore((state) => state.setRepos)
+	const setLoading = useUserStore((state) => state.setLoading)
+	const clear = useUserStore((state) => state.clear)
 	const checkToken = useCallback(async () => {
 		const refresh = await window.electron.be.refresh()
 		if (!refresh.success) {

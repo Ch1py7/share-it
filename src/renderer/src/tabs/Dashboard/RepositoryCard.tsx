@@ -2,11 +2,11 @@ import { ExternalLink, GitFork, Lock, Star } from 'lucide-react'
 import { Card } from '../../components/Card'
 import { GithubRepo } from '@renderer/stores/user/user.types'
 import { cn } from '@renderer/lib/utils'
-import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { getColorByState, getStyleByState } from './utils'
 import { useMemo } from 'react'
 import { Tooltip } from '@renderer/components/Tooltip'
-import { SessionStateHelper } from '@renderer/components/SessionStateHelper'
+import { SessionStateHelper } from '@renderer/components/tooltips/SessionStateHelper'
+import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
 
 interface RepositoryCardProps {
 	repo: GithubRepo
@@ -14,8 +14,7 @@ interface RepositoryCardProps {
 }
 
 export const RepositoryCard: React.FC<RepositoryCardProps> = ({ repo, onClick }) => {
-	const { getCurrentSession } = useSessionsStore()
-	const currentSession = getCurrentSession(repo.id)
+	const currentSession = useCurrentSession(repo.id)
 	const sessionStyle = useMemo(
 		() => getStyleByState[currentSession?.state ?? ''],
 		[currentSession?.state]

@@ -16,9 +16,9 @@ export const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 	onCancel,
 	selectedRepo,
 }) => {
-	const { addSession } = useSessionsStore()
-	const onClick = (repositoryId: number, role: SessionRole) => {
-		addSession(repositoryId, role)
+	const addSession = useSessionsStore((state) => state.addSession)
+	const onClick = (repoId: number, role: SessionRole) => {
+		addSession(repoId, role)
 		onCancel()
 	}
 

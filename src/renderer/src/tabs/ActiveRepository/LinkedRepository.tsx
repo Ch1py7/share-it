@@ -6,21 +6,29 @@ import { Trash2 } from 'lucide-react'
 import { Files } from './Files'
 import { useState } from 'react'
 import { AddFiles } from './AddFiles'
+import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
+import { useShallow } from 'zustand/shallow'
 
 interface LinkedRepositoryProps {
 	repo: GithubRepo
 }
 
 export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo }) => {
-	const [filesToDelete, setFilesToDelete] = useState<FilesType[]>([])
-	const { getCurrentSession, removeSessionFiles, setSessionFiles } = useSessionsStore()
-	const currentSession = getCurrentSession(repo.id)!
+	const [selectedFiles, setSelectedFiles] = useState<FilesType[]>([])
+	const { removeSessionFiles, setSessionFiles } = useSessionsStore(
+		useShallow((state) => ({
+			removeSessionFiles: state.removeSessionFiles,
+			setSessionFiles: state.setSessionFiles,
+		}))
+	)
+	const currentSession = useCurrentSession(repo.id)!
 	const onDeleteFiles = (files: FilesType[]) => {
 		removeSessionFiles(repo.id, files)
 	}
 	const handleSelectFiles = async () => {
 		if (!currentSession || !currentSession?.repository) return
 		const files = await window.electron.selectFiles(currentSession?.repository?.path)
+		if (!files.length) return
 		setSessionFiles(repo.id, files)
 	}
 
@@ -34,15 +42,15 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo }) => {
 				</div>
 
 				<div className="flex items-center justify-center gap-2">
-					{Boolean(currentSession.files.length) && (
+					{Boolean(selectedFiles.length) && (
 						<div className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700">
-							{currentSession.files.length} selected
+							{selectedFiles.length} selected
 						</div>
 					)}
-					{Boolean(filesToDelete.length) && (
+					{Boolean(selectedFiles.length) && (
 						<button
 							type="button"
-							onClick={() => onDeleteFiles(filesToDelete)}
+							onClick={() => onDeleteFiles(selectedFiles)}
 							className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-red-50 hover:text-red-600"
 						>
 							<Trash2 size={15} />
@@ -55,8 +63,8 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo }) => {
 					repoId={repo.id}
 					currentSession={currentSession}
 					onDelete={onDeleteFiles}
-					filesToDelete={filesToDelete}
-					setFilesToDelete={setFilesToDelete}
+					selectedFiles={selectedFiles}
+					setSelectedFiles={setSelectedFiles}
 				/>
 			)}
 			<AddFiles onClick={handleSelectFiles} full={currentSession.files.length === 0} />

@@ -3,7 +3,7 @@ import { useErrors } from '@renderer/hooks/useErrors'
 import { ArrowLeft, Ban, Rocket, Trash2 } from 'lucide-react'
 import { States } from '@renderer/stores/sessions/sessions.types'
 import { Tooltip } from '@renderer/components/Tooltip'
-import { SessionStateHelper } from '@renderer/components/SessionStateHelper'
+import { SessionStateHelper } from '@renderer/components/tooltips/SessionStateHelper'
 import { cn } from '@renderer/lib/utils'
 import { sessionStateConfig } from '@renderer/constants/states'
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
@@ -11,6 +11,7 @@ import { useUserStore } from '@renderer/stores/user/user.store'
 import { Errors } from './Errors'
 import { UnlinkedRepository } from './UnlinkedRepository'
 import { LinkedRepository } from './LinkedRepository'
+import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
 
 interface ActiveRepositoryProps {
 	repo: GithubRepo
@@ -18,8 +19,8 @@ interface ActiveRepositoryProps {
 }
 
 export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack }) => {
-	const { getCurrentSession, removeSession } = useSessionsStore()
-	const { user } = useUserStore()
+	const removeSession = useSessionsStore((state) => state.removeSession)
+	const user = useUserStore((state) => state.user)
 	const {
 		error,
 		customMessage,
@@ -29,7 +30,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 		setCustomMessage,
 	} = useErrors()
 
-	const currentSession = getCurrentSession(repo.id)
+	const currentSession = useCurrentSession(repo.id)
 	const sessionState: States = currentSession?.state ?? 'disconnected'
 
 	const onDeleteSession = async () => {

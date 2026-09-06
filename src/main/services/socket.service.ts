@@ -66,6 +66,10 @@ export class SocketService {
 		this.socket.on('session:files-delivery', (data) => {
 			this.window.webContents.send('session:files-delivery', data)
 		})
+
+		this.socket.on('session:batch', (data) => {
+			this.window.webContents.send('session:batch', { ...data, repoId: Number(data.repoId) })
+		})
 	}
 
 	public disconnect() {

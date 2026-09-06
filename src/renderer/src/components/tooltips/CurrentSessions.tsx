@@ -4,10 +4,19 @@ import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { useMemo } from 'react'
 
 export const CurrentSessions = () => {
-	const counts = useSessionsStore((state) => state.getSessionsStateQty)
 	const sessions = useSessionsStore((state) => state.sessions)
-	const sessionsStates = useMemo(() => Object.entries(counts()), [sessions])
+	const counts = useMemo(() => {
+		const totalCounts = { connected: 0, disconnected: 0, loading: 0, error: 0, pending: 0 }
 
+		for (const session of sessions.values()) {
+			if (totalCounts[session.state] !== undefined) {
+				totalCounts[session.state]++
+			}
+		}
+
+		return totalCounts
+	}, [sessions])
+	const sessionsStates = Object.entries(counts)
 	return (
 		<div className="p-3 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50">
 			{sessionsStates.map(([key, value]) => {

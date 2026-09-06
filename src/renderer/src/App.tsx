@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import './App.css'
 import { Header } from './components/Header'
 import { Loading } from './components/Loading'
@@ -11,25 +11,38 @@ import { useSessionsStore } from './stores/sessions/sessions.store'
 import { useUserStore } from './stores/user/user.store'
 import { Initializer } from './components/Initializer'
 import { SocketHandler } from './components/SocketHandler'
+import { useHasSession } from './hooks/sessions/useHasSession'
+import { useShallow } from 'zustand/shallow'
 
 export const App = () => {
-	const { sessions, hasSession } = useSessionsStore()
-	const { user, loading, repos } = useUserStore()
-	const [isOpen, setIsOpen] = useState(false)
 	const [selectedRepo, setSelectedRepo] = useState<GithubRepo | null>(null)
+	const [isOpen, setIsOpen] = useState(false)
 
-	const sessionIds = new Set(sessions.keys())
-	const sortedRepos =
-		repos?.toSorted((a, b) => {
-			const aActive = sessionIds.has(a.id)
-			const bActive = sessionIds.has(b.id)
+	const sessions = useSessionsStore((state) => state.sessions)
+	const { user, loading, repos } = useUserStore(
+		useShallow((state) => ({
+			user: state.user,
+			loading: state.loading,
+			repos: state.repos,
+		}))
+	)
 
-			return Number(bActive) - Number(aActive)
-		}) ?? []
+	const sessionIds = useMemo(() => new Set(sessions.keys()), [sessions])
+
+	const sortedRepos = useMemo(
+		() =>
+			repos?.toSorted((a, b) => {
+				const aActive = sessionIds.has(a.id)
+				const bActive = sessionIds.has(b.id)
+
+				return Number(bActive) - Number(aActive)
+			}) ?? [],
+		[repos, sessionIds]
+	)
 
 	const handleSelectRepository = (repo: GithubRepo) => {
 		setSelectedRepo(repo)
-		if (hasSession(repo.id)) return
+		if (sessionIds.has(repo.id)) return
 		setIsOpen(true)
 	}
 
@@ -38,7 +51,7 @@ export const App = () => {
 		setIsOpen(false)
 	}
 
-	const isSelectedActiveRepo = selectedRepo && hasSession(selectedRepo.id)
+	const isSelectedActiveRepo = useHasSession(selectedRepo?.id)
 
 	return (
 		<>
@@ -53,7 +66,7 @@ export const App = () => {
 					)}
 					<Header />
 					<div className="flex-1 min-h-0 overflow-x-hidden">
-						{isSelectedActiveRepo ? (
+						{isSelectedActiveRepo && selectedRepo ? (
 							<ActiveRepository repo={selectedRepo} onBack={onCancel} />
 						) : (
 							<Repositories repos={sortedRepos} onClick={handleSelectRepository} />

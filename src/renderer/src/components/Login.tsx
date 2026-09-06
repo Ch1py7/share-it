@@ -3,9 +3,16 @@ import { GithubIcon } from '@renderer/components/icons/Github'
 import { GithubAuth } from '@renderer/lib/GithubAuth'
 import { useUserStore } from '@renderer/stores/user/user.store'
 import { useEffect, useRef, useState } from 'react'
+import { useShallow } from 'zustand/shallow'
 
 export const Login = () => {
-	const { setUser, setRepos, setAccessToken } = useUserStore()
+	const { setUser, setRepos, setAccessToken } = useUserStore(
+		useShallow((state) => ({
+			setUser: state.setUser,
+			setRepos: state.setRepos,
+			setAccessToken: state.setAccessToken,
+		}))
+	)
 	const [isLoggingIn, setIsLoggingIn] = useState(false)
 	const codeVerifier = useRef<string | null>(null)
 	const loginState = useRef<string | null>(null)

@@ -4,50 +4,41 @@ import { create } from 'zustand'
 
 export const useSessionsStore = create<SessionsState>()((set, get) => ({
 	sessions: new Map(),
-	addSession: (repositoryId, role) => {
+	addSession: (repoId, role) => {
 		const next = new Map(get().sessions)
-		next.set(repositoryId, {
+		next.set(repoId, {
 			role,
 			state: 'disconnected',
 			files: [],
 		})
 		set({ sessions: next })
 	},
-	removeSession: (repositoryId) => {
+	removeSession: (repoId) => {
 		const next = new Map(get().sessions)
-		next.delete(repositoryId)
+		next.delete(repoId)
 		set({ sessions: next })
 	},
-	getCurrentSession: (repositoryId) => get().sessions.get(repositoryId),
-	hasSession: (repositoryId) => get().sessions.has(repositoryId),
-	setSessionRepository: (repositoryId, repository) => {
+	setSessionRepository: (repoId, repository) => {
 		const prev = get().sessions
-		const current = prev.get(repositoryId)
-
-		if (!current) {
-			set({ sessions: prev })
-			return
-		}
+		const current = prev.get(repoId)
+		if (!current) return
 
 		const next = new Map(prev)
-		next.set(repositoryId, {
+		next.set(repoId, {
 			...current,
 			repository,
 			state: 'pending',
 		})
 		set({ sessions: next })
 	},
-	setSessionFiles: (repositoryId, files) => {
+	setSessionFiles: (repoId, files) => {
 		const prev = get().sessions
-		const current = prev.get(repositoryId)
-		if (!current) {
-			set({ sessions: prev })
-			return
-		}
+		const current = prev.get(repoId)
+		if (!current) return
 
 		const next = new Map(prev)
 
-		next.set(repositoryId, {
+		next.set(repoId, {
 			...current,
 			files: mergeFiles(current.files ?? [], files),
 		})
@@ -55,37 +46,28 @@ export const useSessionsStore = create<SessionsState>()((set, get) => ({
 		set({ sessions: next })
 	},
 
-	removeSessionFiles: (repositoryId, deletedFiles) => {
+	removeSessionFiles: (repoId, files) => {
 		const prev = get().sessions
-		const current = prev.get(repositoryId)
-		if (!current) {
-			set({ sessions: prev })
-			return
-		}
-		const rest = current.files.filter(
-			(f) => !deletedFiles.map((d) => d.relativePath).includes(f.relativePath)
-		)
+		const current = prev.get(repoId)
+		if (!current) return
+
+		const deletedFiles = new Set(files.map((d) => d.id))
+
+		const rest = current.files.filter((f) => !deletedFiles.has(f.id))
 
 		const next = new Map(prev)
-
-		next.set(repositoryId, {
-			...current,
-			files: rest,
-		})
-
+		next.set(repoId, { ...current, files: rest })
 		set({ sessions: next })
 	},
 
-	setSessionState: (repositoryId, state) => {
+	setSessionState: (repoId, state) => {
 		const prev = get().sessions
-		const current = prev.get(repositoryId)
-		if (!current) {
-			set({ sessions: prev })
-			return
-		}
+		const current = prev.get(repoId)
+		if (!current) return
+
 		const next = new Map(prev)
 
-		next.set(repositoryId, {
+		next.set(repoId, {
 			...current,
 			state,
 		})

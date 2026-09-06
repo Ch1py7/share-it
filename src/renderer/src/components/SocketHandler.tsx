@@ -1,8 +1,10 @@
+import { useFilesStore } from '@renderer/stores/files/files.store'
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { useEffect } from 'react'
 
 export const SocketHandler = () => {
-	const { setSessionState } = useSessionsStore()
+	const setSessionState = useSessionsStore((state) => state.setSessionState)
+	const addTransfer = useFilesStore((state) => state.addTransfer)
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onNotification((notification) => {
@@ -32,7 +34,7 @@ export const SocketHandler = () => {
 		return () => {
 			unsubscribe()
 		}
-	}, [])
+	}, [setSessionState])
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onFilesOfferReceived((files) => {
@@ -43,6 +45,16 @@ export const SocketHandler = () => {
 			unsubscribe()
 		}
 	}, [])
+
+	useEffect(() => {
+		const unsubscribe = window.electron.socket.onBatch((files) => {
+			addTransfer(files.repoId, files.batchId, files.filesIds)
+		})
+
+		return () => {
+			unsubscribe()
+		}
+	}, [addTransfer])
 
 	return null
 }

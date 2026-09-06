@@ -18,11 +18,12 @@ export const UnlinkedRepository: React.FC<UnlinkedRepositoryProps> = ({
 	setInvalidRepository,
 	repo,
 }) => {
-	const { setSessionRepository } = useSessionsStore()
+	const setSessionRepository = useSessionsStore((state) => state.setSessionRepository)
 
 	const handleSelectFolder = async () => {
 		onClose()
 		const repository = await window.electron.selectFolder()
+		if (!repository) return
 
 		if (!repository.valid) {
 			setInvalidRepository()

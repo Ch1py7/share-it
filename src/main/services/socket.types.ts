@@ -11,7 +11,7 @@ type States = 'disconnected' | 'error' | 'connected' | 'loading' | 'pending'
 
 interface ShareFiles {
 	repoId: string
-	filenames: string
+	files: { filename: string; id: string }[]
 }
 
 interface AcceptFiles {
@@ -21,8 +21,7 @@ interface AcceptFiles {
 
 interface DeliverFilesPayload {
 	receiverId: string
-	filenames: string
-	fileContent: string
+	files: { filenames: string; fileContent: string }[]
 }
 
 export interface ServerToClientEvents {
@@ -31,7 +30,7 @@ export interface ServerToClientEvents {
 	status: (data: { repoId: string; status: States }) => void
 	'session:files-offer-received': (data: {
 		offerId: string
-		filenames: string
+		filenames: string[]
 		senderId: string
 		senderName: string
 	}) => void
@@ -41,7 +40,8 @@ export interface ServerToClientEvents {
 		senderName: string
 	}) => void
 	'session:error': (data: { message: string }) => void
-	'session:files-delivery': (data: { filenames: string; fileContent: string }) => void
+	'session:files-delivery': (data: { filenames: string; fileContent: string }[]) => void
+	'session:batch': (data: { repoId: string; batchId: string; filesIds: string[] }) => void
 }
 
 export interface ClientToServerEvents {

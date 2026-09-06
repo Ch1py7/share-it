@@ -124,14 +124,16 @@ ipcMain.handle('select-files', async (_, repositoryRoot: string) => {
 	})
 
 	if (result.canceled) {
-		return null
+		return []
 	}
 
 	const files = await Promise.all(
 		result.filePaths.map(async (filePath) => {
+			const id = crypto.randomUUID()
 			const buffer = await readFile(filePath)
 
 			return {
+				id,
 				name: path.basename(filePath),
 				relativePath: path.relative(repositoryRoot, filePath),
 				content: buffer.toString('base64'),

@@ -6,7 +6,7 @@ declare global {
 		electron: {
 			openExternal(url: string): Promise<void>
 			onGithubCallback: (callback: (url: string) => void) => void
-			selectFolder: () => Promise<LocalFolder>
+			selectFolder: () => Promise<LocalFolder | null>
 			selectFiles: (repositoryRoot: string) => Promise<LocalSecretFile[]>
 			socket: {
 				connect: () => Promise<void>
@@ -18,8 +18,9 @@ declare global {
 				onStatus: (callback: (data: OnStatus) => void) => () => void
 				onFilesOfferReceived: (callback: (data: OnFilesOfferReceived) => void) => () => void
 				onPeerRequestedData: (callback: (data: OnPeerRequestedData) => void) => () => void
-				onFilesDelivery: (callback: (data: OnFilesDelivery) => void) => () => void
+				onFilesDelivery: (callback: (data: OnFilesDelivery[]) => void) => () => void
 				onError: (callback: (data: OnError) => void) => () => void
+				onBatch: (callback: (data: OnBatch) => void) => () => void
 
 				connectSession: (params: ConnectSession) => Promise<void>
 				disconnectSession: (params: DisconnectSession) => Promise<void>
@@ -39,9 +40,15 @@ declare global {
 	}
 }
 
+interface OnBatch {
+	repoId: number
+	batchId: string
+	filesIds: string[]
+}
+
 export interface ShareFiles {
 	repoId: string
-	filenames: string
+	files: { filename: string; id: string }[]
 }
 
 export interface AcceptFiles {
@@ -51,8 +58,10 @@ export interface AcceptFiles {
 
 export interface DeliverFilesPayload {
 	receiverId: string
-	filenames: string
-	fileContent: string
+	files: {
+		filenames: string
+		fileContent: string
+	}[]
 }
 
 interface OnFilesOfferReceived {
@@ -98,6 +107,7 @@ interface OnStatus {
 export type States = 'disconnected' | 'error' | 'connected' | 'loading' | 'pending'
 
 interface LocalSecretFile {
+	id: string
 	name: string
 	relativePath: string
 	content: string

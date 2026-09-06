@@ -1,12 +1,15 @@
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { useUserStore } from '@renderer/stores/user/user.store'
 import { Bell, LogOut, Search, Settings, User2, Users } from 'lucide-react'
-import { CurrentSessions } from './CurrentSessions'
+import { CurrentSessions } from './tooltips/CurrentSessions'
 import { Tooltip } from './Tooltip'
+import { useShallow } from 'zustand/shallow'
 
 export const Header = () => {
-	const { user, logout } = useUserStore()
-	const { sessions } = useSessionsStore()
+	const { user, logout } = useUserStore(
+		useShallow((state) => ({ user: state.user, logout: state.logout }))
+	)
+	const sessions = useSessionsStore((state) => state.sessions)
 
 	return (
 		<header className="sticky z-50 top-0 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl">
@@ -23,7 +26,12 @@ export const Header = () => {
 					</div>
 
 					{sessions.size > 0 && (
-						<Tooltip className="ml-3" tooltipClassNames='w-full' position="bottom" content={<CurrentSessions />}>
+						<Tooltip
+							className="ml-3"
+							tooltipClassNames="w-full"
+							position="bottom"
+							content={<CurrentSessions />}
+						>
 							<div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 py-1.5">
 								<div className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-900 text-white ms-3">
 									<Users size={14} />
