@@ -3,9 +3,11 @@ import { electronAPI } from '@electron-toolkit/preload'
 import {
 	AcceptFiles,
 	ConnectSession,
-	DeliverFilesPayload,
+	CreateTunnel,
 	DisconnectSession,
+	ReceiveFiles,
 	ReposParams,
+	SendFiles,
 	ShareFiles,
 } from './index.types'
 import { notifications } from './listeners/notifications'
@@ -61,8 +63,8 @@ if (process.contextIsolated) {
 				shareFiles: (params: ShareFiles) => ipcRenderer.invoke('session:share-files', { params }),
 				acceptFiles: (params: AcceptFiles) =>
 					ipcRenderer.invoke('session:accept-files', { params }),
-				deliverFilesPayload: (params: DeliverFilesPayload) =>
-					ipcRenderer.invoke('session:deliver-files-payload', { params }),
+				createTunnel: (params: CreateTunnel) =>
+					ipcRenderer.invoke('session:create-tunnel', { params }),
 			},
 
 			be: {
@@ -77,6 +79,8 @@ if (process.contextIsolated) {
 				logout: () => ipcRenderer.invoke('be:logout'),
 				getUser: () => ipcRenderer.invoke('be:get-user'),
 				getRepos: (params: ReposParams) => ipcRenderer.invoke('be:get-repos', { params }),
+				sendFiles: (params: SendFiles) => ipcRenderer.invoke('be:send-files', { params }),
+				receiveFiles: (params: ReceiveFiles) => ipcRenderer.invoke('be:receive-files', { params }),
 			},
 		})
 

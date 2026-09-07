@@ -5,23 +5,23 @@ export interface ConnectSession {
 	userId: number
 }
 
-type DisconnectSession = Omit<ConnectSession, 'userId'>
+export type DisconnectSession = Omit<ConnectSession, 'userId'>
 
 type States = 'disconnected' | 'error' | 'connected' | 'loading' | 'pending'
 
-interface ShareFiles {
+export interface ShareFiles {
 	repoId: string
 	files: { filename: string; id: string }[]
 }
 
-interface AcceptFiles {
-	offerId: string
+export interface AcceptFiles {
+	batchId: string
 	senderId: string
 }
 
-interface DeliverFilesPayload {
+export interface CreateTunnel {
 	receiverId: string
-	files: { filenames: string; fileContent: string }[]
+	batchId: string
 }
 
 export interface ServerToClientEvents {
@@ -29,18 +29,15 @@ export interface ServerToClientEvents {
 	'session:notification': (data: { title: string; description: string }) => void
 	status: (data: { repoId: string; status: States }) => void
 	'session:files-offer-received': (data: {
-		offerId: string
+		batchId: string
 		filenames: string[]
 		senderId: string
 		senderName: string
 	}) => void
-	'session:peer-requested-data': (data: {
-		offerId: string
-		receiverId: string
-		senderName: string
-	}) => void
+	'session:peer-requested-data': (data: { batchId: string }) => void
 	'session:error': (data: { message: string }) => void
-	'session:files-delivery': (data: { filenames: string; fileContent: string }[]) => void
+	'session:files-delivery': (data: { batchId: string }) => void
+	'session:files-to-send': (data: { batchId: string; repoId: string }) => void
 	'session:batch': (data: { repoId: string; batchId: string; filesIds: string[] }) => void
 }
 
@@ -49,5 +46,5 @@ export interface ClientToServerEvents {
 	'session:disconnect': (data: DisconnectSession) => void
 	'session:share-files': (data: ShareFiles) => void
 	'session:accept-files': (data: AcceptFiles) => void
-	'session:deliver-files-payload': (data: DeliverFilesPayload) => void
+	'session:create-tunnel': (data: CreateTunnel) => void
 }

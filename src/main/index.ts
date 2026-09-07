@@ -71,15 +71,16 @@ ipcMain.handle('be:get-user', async () => await backend.getUser())
 ipcMain.handle('be:get-repos', (_, { params }) => backend.getRepos(params))
 ipcMain.handle('be:logout', () => backend.logout())
 
+ipcMain.handle('be:send-files', (_, { params }) => backend.sendFiles(params))
+ipcMain.handle('be:receive-files', (_, { params }) => backend.receiveFiles(params))
+
 ipcMain.handle('socket:connect', () => socketService?.connect())
 ipcMain.handle('socket:disconnect', () => socketService?.disconnect())
 ipcMain.handle('session:connect', (_, { params }) => socketService?.connectSession(params))
 ipcMain.handle('session:disconnect', (_, { params }) => socketService?.disconnectSession(params))
 ipcMain.handle('session:share-files', (_, { params }) => socketService?.shareFiles(params))
 ipcMain.handle('session:accept-files', (_, { params }) => socketService?.acceptFiles(params))
-ipcMain.handle('session:deliver-files-payload', (_, { params }) =>
-	socketService?.deliverFilesPayload(params)
-)
+ipcMain.handle('session:create-tunnel', (_, { params }) => socketService?.createTunnel(params))
 
 ipcMain.handle('select-folder', async () => {
 	const result = await dialog.showOpenDialog({

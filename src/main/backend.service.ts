@@ -2,6 +2,11 @@ import keytar from 'keytar'
 import { api } from './axios/client'
 import { setClientToken } from './axios/interceptors'
 import { ErrorCodes } from './axios/errorCodes'
+import fs from 'node:fs'
+import { PassThrough } from 'node:stream'
+import { ZipArchive } from 'archiver'
+import path from 'node:path'
+import unzipper from 'unzipper'
 
 export class BackendService {
 	private async getRefreshAccessToken() {
@@ -53,7 +58,13 @@ export class BackendService {
 		const refreshToken = await this.getRefreshAccessToken()
 
 		if (!refreshToken) {
-			throw new Error('No refresh token found')
+			return {
+				success: false,
+				error: {
+					message: '',
+					code: '',
+				},
+			}
 		}
 
 		const response = await api.post('/auth/refresh', { refreshToken })
@@ -129,6 +140,67 @@ export class BackendService {
 			data: response.data,
 		}
 	}
+
+	public async sendFiles({ batchId, filePaths }: SendFiles): Promise<{
+		success: boolean
+	}> {
+		const streamBridge = new PassThrough()
+		const archive = new ZipArchive({ zlib: { level: 5 } })
+
+		archive.pipe(streamBridge)
+
+		const request = api.post(`/stream-bridge/${batchId}/transmitter`, streamBridge, {
+			headers: {
+				'Content-Type': 'application/zip',
+			},
+		})
+
+		for (const filePath of filePaths) {
+			if (!fs.existsSync(filePath)) continue
+
+			archive.file(filePath, {
+				name: path.basename(filePath),
+			})
+		}
+
+		await archive.finalize()
+
+		await request
+		return { success: true }
+	}
+
+	public async receiveFiles({ batchId, repositoryPath }: ReceiveFiles): Promise<{
+		success: boolean
+	}> {
+		const response = await api.get(`/stream-bridge/${batchId}/receiver`, {
+			responseType: 'stream',
+		})
+
+		const extract = unzipper.Extract({
+			path: repositoryPath,
+		})
+
+		return new Promise((resolve, reject) => {
+			response.data
+				.pipe(extract)
+				.on('close', () => {
+					resolve({ success: true })
+				})
+				.on('error', reject)
+
+			response.data.on('error', reject)
+		})
+	}
+}
+
+interface SendFiles {
+	filePaths: string[]
+	batchId: string
+}
+
+interface ReceiveFiles {
+	repositoryPath: string
+	batchId: string
 }
 
 interface Params {

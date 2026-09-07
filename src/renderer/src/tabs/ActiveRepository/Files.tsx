@@ -21,13 +21,13 @@ export const Files: React.FC<FilesProps> = ({
 	selectedFiles,
 	setSelectedFiles,
 }) => {
-	const currentTransfers = useFilesStore((state) => state.transfers.get(repoId))
-	const currentFilesIdsSet = useMemo(() => {
-		if (!currentTransfers) return new Set<string>()
+	const currentTransfer = useFilesStore((state) => state.transfers.get(repoId))
+	const currentFilePathsSet = useMemo(() => {
+		if (!currentTransfer) return new Set<string>()
 
-		const filesIds = Array.from(currentTransfers.values()).flatMap((batch) => batch.filesIds)
-		return new Set(filesIds)
-	}, [currentTransfers])
+		const filepaths = Array.from(currentTransfer.values()).flatMap((batch) => batch.filepaths)
+		return new Set(filepaths)
+	}, [currentTransfer])
 
 	const toggleFileSelection = (file: FilesType) => {
 		setSelectedFiles((prev) => {
@@ -45,7 +45,7 @@ export const Files: React.FC<FilesProps> = ({
 		setSelectedFiles([])
 	}
 
-	const isPendingSync = (fileId: string) => currentFilesIdsSet.has(fileId)
+	const isPendingSync = (fileId: string) => currentFilePathsSet.has(fileId)
 
 	return (
 		<div className="flex-1 overflow-y-auto relative">

@@ -1,12 +1,14 @@
 import { io, Socket } from 'socket.io-client'
 import type { BrowserWindow } from 'electron'
-import { ClientToServerEvents, ConnectSession, ServerToClientEvents } from './socket.types'
 import {
 	AcceptFiles,
-	DeliverFilesPayload,
+	ClientToServerEvents,
+	ConnectSession,
+	CreateTunnel,
 	DisconnectSession,
+	ServerToClientEvents,
 	ShareFiles,
-} from '../../preload/index.types'
+} from './socket.types'
 
 export class SocketService {
 	private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null
@@ -55,6 +57,10 @@ export class SocketService {
 			this.window.webContents.send('session:files-offer-received', data)
 		})
 
+		this.socket.on('session:batch', (data) => {
+			this.window.webContents.send('session:batch', { ...data, repoId: Number(data.repoId) })
+		})
+
 		this.socket.on('session:peer-requested-data', (data) => {
 			this.window.webContents.send('session:peer-requested-data', data)
 		})
@@ -67,8 +73,15 @@ export class SocketService {
 			this.window.webContents.send('session:files-delivery', data)
 		})
 
-		this.socket.on('session:batch', (data) => {
-			this.window.webContents.send('session:batch', { ...data, repoId: Number(data.repoId) })
+		this.socket.on('session:files-delivery', (data) => {
+			this.window.webContents.send('session:files-delivery', data)
+		})
+
+		this.socket.on('session:files-to-send', (data) => {
+			this.window.webContents.send('session:files-to-send', {
+				batchId: data.batchId,
+				repoId: Number(data.repoId),
+			})
 		})
 	}
 
@@ -97,7 +110,7 @@ export class SocketService {
 		this.socket?.emit('session:accept-files', payload)
 	}
 
-	public deliverFilesPayload(payload: DeliverFilesPayload) {
-		this.socket?.emit('session:deliver-files-payload', payload)
+	public createTunnel(payload: CreateTunnel) {
+		this.socket?.emit('session:create-tunnel', payload)
 	}
 }

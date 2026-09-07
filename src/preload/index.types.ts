@@ -16,18 +16,19 @@ declare global {
 				onNotification: (callback: (data: OnNotification) => void) => () => void
 				onSessionNotification: (callback: (data: OnNotification) => void) => () => void
 				onStatus: (callback: (data: OnStatus) => void) => () => void
-				onFilesOfferReceived: (callback: (data: OnFilesOfferReceived) => void) => () => void
-				onPeerRequestedData: (callback: (data: OnPeerRequestedData) => void) => () => void
-				onFilesDelivery: (callback: (data: OnFilesDelivery[]) => void) => () => void
 				onError: (callback: (data: OnError) => void) => () => void
+				onFilesOfferReceived: (callback: (data: OnFilesOfferReceived) => void) => () => void
 				onBatch: (callback: (data: OnBatch) => void) => () => void
+				onPeerRequestedData: (callback: (data: OnPeerRequestedData) => void) => () => void
+				onFilesDelivery: (callback: (data: OnFilesDelivery) => void) => () => void
+				onFilesToSend: (callback: (data: OnFilesToSend) => void) => () => void
 
 				connectSession: (params: ConnectSession) => Promise<void>
 				disconnectSession: (params: DisconnectSession) => Promise<void>
 
 				shareFiles: (params: ShareFiles) => Promise<void>
 				acceptFiles: (params: AcceptFiles) => Promise<void>
-				deliverFilesPayload: (params: DeliverFilesPayload) => Promise<void>
+				createTunnel: (params: CreateTunnel) => Promise<void>
 			}
 			be: {
 				logout: () => Promise<any>
@@ -35,6 +36,8 @@ declare global {
 				refresh: () => Promise<CommonResponse<RefreshResponse>>
 				auth: (code: string, codeVerifier: string) => Promise<CommonResponse<AuthResponse>>
 				getUser: () => Promise<CommonResponse<User>>
+				sendFiles: (params: SendFiles) => Promise<{ success: boolean }>
+				receiveFiles: (params: ReceiveFiles) => Promise<{ success: boolean }>
 			}
 		} & ElectronAPI
 	}
@@ -46,35 +49,36 @@ interface OnBatch {
 	filesIds: string[]
 }
 
+interface OnFilesToSend {
+	batchId: string
+	repoId: number
+}
+
 export interface ShareFiles {
 	repoId: string
 	files: { filename: string; id: string }[]
 }
 
 export interface AcceptFiles {
-	offerId: string
+	batchId: string
 	senderId: string
 }
 
-export interface DeliverFilesPayload {
+export interface CreateTunnel {
 	receiverId: string
-	files: {
-		filenames: string
-		fileContent: string
-	}[]
+	batchId: string
 }
 
 interface OnFilesOfferReceived {
-	offerId: string
+	batchId: string
 	filenames: string
 	senderId: string
 	senderName: string
 }
 
 interface OnPeerRequestedData {
-	offerId: string
+	batchId: string
 	receiverId: string
-	senderName: string
 }
 
 interface OnError {
@@ -82,8 +86,7 @@ interface OnError {
 }
 
 interface OnFilesDelivery {
-	filenames: string
-	fileContent: string
+	batchId: string
 }
 
 export interface ConnectSession {
@@ -157,6 +160,16 @@ interface SuccessResponse<T> {
 interface FailureResponse {
 	success: false
 	error: ErrorResponse
+}
+
+export interface SendFiles {
+	filepaths: string[]
+	batchId: string
+}
+
+export interface ReceiveFiles {
+	repositoryPath: string
+	batchId: string
 }
 
 export interface ReposParams {

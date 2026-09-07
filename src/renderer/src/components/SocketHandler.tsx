@@ -1,10 +1,14 @@
 import { useFilesStore } from '@renderer/stores/files/files.store'
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { useEffect } from 'react'
+import { useShallow } from 'zustand/shallow'
 
 export const SocketHandler = () => {
-	const setSessionState = useSessionsStore((state) => state.setSessionState)
+	const { setSessionState, sessions } = useSessionsStore(
+		useShallow((state) => ({ setSessionState: state.setSessionState, sessions: state.sessions }))
+	)
 	const addTransfer = useFilesStore((state) => state.addTransfer)
+	const transfers = useFilesStore((state) => state.transfers)
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onNotification((notification) => {
@@ -48,13 +52,44 @@ export const SocketHandler = () => {
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onBatch((files) => {
-			addTransfer(files.repoId, files.batchId, files.filesIds)
+			const currentSession = sessions.get(files.repoId)
+			const filepaths =
+				currentSession?.files
+					.filter((f) => files.filesIds.includes(f.id))
+					.map((f) => f.relativePath) ?? []
+			addTransfer(files.repoId, files.batchId, filepaths)
 		})
 
 		return () => {
 			unsubscribe()
 		}
-	}, [addTransfer])
+	}, [addTransfer, sessions])
+
+	useEffect(() => {
+		const unsubscribe = window.electron.socket.onPeerRequestedData((data) => {
+			window.electron.socket.createTunnel(data)
+		})
+
+		return () => {
+			unsubscribe()
+		}
+	}, [])
+
+	useEffect(() => {
+		const unsubscribe = window.electron.socket.onFilesToSend((file) => {
+			const currentTransfer = transfers.get(file.repoId)
+			const currentBatch = currentTransfer?.get(file.batchId)
+
+			window.electron.be.sendFiles({
+				batchId: file.batchId,
+				filepaths: currentBatch?.filepaths ?? [],
+			})
+		})
+
+		return () => {
+			unsubscribe()
+		}
+	}, [sessions])
 
 	return null
 }
