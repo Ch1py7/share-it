@@ -79,17 +79,19 @@ export const SocketHandler = () => {
 		const unsubscribe = window.electron.socket.onFilesToSend((file) => {
 			const currentTransfer = transfers.get(file.repoId)
 			const currentBatch = currentTransfer?.get(file.batchId)
+			if (!currentBatch) return
 
 			window.electron.be.sendFiles({
 				batchId: file.batchId,
-				filePaths: currentBatch?.filePaths ?? [],
+				filePaths: currentBatch.filePaths,
+				repoId: file.repoId,
 			})
 		})
 
 		return () => {
 			unsubscribe()
 		}
-	}, [sessions])
+	}, [sessions, transfers])
 
 	return null
 }

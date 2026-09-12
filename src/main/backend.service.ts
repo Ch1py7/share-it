@@ -49,9 +49,12 @@ export class BackendService {
 	}
 
 	public async logout() {
-		await api.post('/auth/logout')
-
-		await this.clearRefreshAccessToken()
+		try {
+			await api.post('/auth/logout')
+		} finally {
+			setClientToken('')
+			await this.clearRefreshAccessToken()
+		}
 	}
 
 	public async refresh() {

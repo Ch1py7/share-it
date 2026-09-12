@@ -1,13 +1,12 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: is not required here */
-import { ElectronAPI } from '@electron-toolkit/preload'
 
 declare global {
 	interface Window {
 		electron: {
 			openExternal(url: string): Promise<void>
 			onGithubCallback: (callback: (url: string) => void) => void
-			selectFolder: () => Promise<LocalFolder | null>
-			selectFiles: (repositoryRoot: string) => Promise<LocalSecretFile[]>
+			selectFolder: (repoId: number) => Promise<LocalFolder | null>
+			selectFiles: (repoId: number) => Promise<LocalSecretFile[]>
 			socket: {
 				connect: () => Promise<void>
 				disconnect: () => Promise<void>
@@ -39,7 +38,7 @@ declare global {
 				sendFiles: (params: SendFiles) => Promise<{ success: boolean }>
 				receiveFiles: (params: ReceiveFiles) => Promise<{ success: boolean }>
 			}
-		} & ElectronAPI
+		}
 	}
 }
 
@@ -166,10 +165,11 @@ interface FailureResponse {
 export interface SendFiles {
 	filePaths: string[]
 	batchId: string
+	repoId: number
 }
 
 export interface ReceiveFiles {
-	repositoryPath: string
+	repoId: number
 	batchId: string
 }
 

@@ -13,7 +13,7 @@ export const getColorByState = (state?: string) => {
 		case 'pending':
 			return 'border-yellow-200 bg-yellow-50/60'
 		default:
-			;('border-red-200 bg-red-50/60')
+			return ''
 	}
 }
 

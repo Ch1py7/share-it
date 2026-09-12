@@ -12,8 +12,6 @@ import {
 import { notifications } from './listeners/notifications'
 import { session } from './listeners/session'
 
-const api = {}
-
 if (process.contextIsolated) {
 	try {
 		contextBridge.exposeInMainWorld('electron', {
@@ -23,9 +21,9 @@ if (process.contextIsolated) {
 				ipcRenderer.on('be:callback', (_, url) => callback(url))
 			},
 
-			selectFolder: () => ipcRenderer.invoke('select-folder'),
+			selectFolder: (repoId: number) => ipcRenderer.invoke('select-folder', repoId),
 
-			selectFiles: (repositoryRoot: string) => ipcRenderer.invoke('select-files', repositoryRoot),
+			selectFiles: (repoId: number) => ipcRenderer.invoke('select-files', repoId),
 
 			socket: {
 				connect: () => ipcRenderer.invoke('socket:connect'),
@@ -81,8 +79,6 @@ if (process.contextIsolated) {
 				receiveFiles: (params: ReceiveFiles) => ipcRenderer.invoke('be:receive-files', { params }),
 			},
 		})
-
-		contextBridge.exposeInMainWorld('api', api)
 	} catch (error) {
 		console.error(error)
 	}
@@ -91,7 +87,4 @@ if (process.contextIsolated) {
 	window.electron = {
 		openExternal: (url: string) => ipcRenderer.invoke('be:open-login', url),
 	}
-
-	// @ts-expect-error
-	window.api = api
 }

@@ -1,5 +1,6 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, type IpcMainInvokeEvent } from 'electron'
 import path, { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { BackendService } from './backend.service'
@@ -7,9 +8,33 @@ import { access, readFile, realpath } from 'node:fs/promises'
 import { simpleGit } from 'simple-git'
 import { createHash } from 'node:crypto'
 import { SocketService } from './services/socket.service'
+import { AuthorizedRepositories, isBatchId, isGithubLoginUrl, isWithinDirectory } from './security'
 
 let mainWindow: BrowserWindow | null = null
 let socketService: SocketService | null = null
+let rendererUrl: string | null = null
+const authorizedRepositories = new AuthorizedRepositories()
+
+const requireTrustedSender = (event: IpcMainInvokeEvent) => {
+	if (
+		!mainWindow ||
+		event.sender !== mainWindow.webContents ||
+		event.senderFrame !== mainWindow.webContents.mainFrame ||
+		event.senderFrame.url !== `${rendererUrl}/`
+	) {
+		throw new Error('Untrusted IPC sender')
+	}
+}
+
+const handleTrusted = <TArgs extends unknown[]>(
+	channel: string,
+	handler: (event: IpcMainInvokeEvent, ...args: TArgs) => unknown
+) => {
+	ipcMain.handle(channel, (event, ...args) => {
+		requireTrustedSender(event)
+		return handler(event, ...(args as TArgs))
+	})
+}
 
 const gotLock = app.requestSingleInstanceLock()
 
@@ -33,7 +58,8 @@ function createWindow(): void {
 		...(process.platform === 'linux' ? { icon } : {}),
 		webPreferences: {
 			preload: join(__dirname, '../preload/index.js'),
-			sandbox: false,
+			contextIsolation: true,
+			sandbox: true,
 		},
 	})
 
@@ -43,46 +69,66 @@ function createWindow(): void {
 		mainWindow?.show()
 	})
 
-	mainWindow.webContents.setWindowOpenHandler((details) => {
-		shell.openExternal(details.url)
-		return { action: 'deny' }
-	})
+	mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+	mainWindow.webContents.on('will-navigate', (event) => event.preventDefault())
 
 	if (is.dev && process.env.ELECTRON_RENDERER_URL) {
-		mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
+		rendererUrl = process.env.ELECTRON_RENDERER_URL
+		mainWindow.loadURL(rendererUrl)
 	} else {
-		mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+		const rendererPath = join(__dirname, '../renderer/index.html')
+		rendererUrl = pathToFileURL(rendererPath).toString()
+		mainWindow.loadFile(rendererPath)
 	}
 }
 
-ipcMain.handle('be:open-login', (_, url: string) => {
-	shell.openExternal(url)
+handleTrusted('be:open-login', (_, url: unknown) => {
+	if (!isGithubLoginUrl(url)) throw new Error('Invalid login URL')
+	return shell.openExternal(url)
 })
 
 const backend = new BackendService()
 
-ipcMain.handle(
+handleTrusted(
 	'be:auth',
 	async (_, { code, codeVerifier }) => await backend.auth({ code, codeVerifier })
 )
 
-ipcMain.handle('be:refresh-token', async () => await backend.refresh())
-ipcMain.handle('be:get-user', async () => await backend.getUser())
-ipcMain.handle('be:get-repos', (_, { params }) => backend.getRepos(params))
-ipcMain.handle('be:logout', () => backend.logout())
+handleTrusted('be:refresh-token', async () => await backend.refresh())
+handleTrusted('be:get-user', async () => await backend.getUser())
+handleTrusted('be:get-repos', (_, { params }) => backend.getRepos(params))
+handleTrusted('be:logout', async () => {
+	try {
+		return await backend.logout()
+	} finally {
+		authorizedRepositories.clear()
+	}
+})
 
-ipcMain.handle('be:send-files', (_, { params }) => backend.sendFiles(params))
-ipcMain.handle('be:receive-files', (_, { params }) => backend.receiveFiles(params))
+handleTrusted('be:send-files', async (_, { params }) => {
+	if (!params || !isBatchId(params.batchId)) throw new Error('Invalid batch')
+	const filePaths = await authorizedRepositories.requireSelectedFiles(
+		params.repoId,
+		params.filePaths
+	)
+	return backend.sendFiles({ batchId: params.batchId, filePaths })
+})
+handleTrusted('be:receive-files', async (_, { params }) => {
+	if (!params || !isBatchId(params.batchId)) throw new Error('Invalid batch')
+	const repositoryPath = authorizedRepositories.requireRoot(params.repoId)
+	return backend.receiveFiles({ batchId: params.batchId, repositoryPath })
+})
 
-ipcMain.handle('socket:connect', () => socketService?.connect())
-ipcMain.handle('socket:disconnect', () => socketService?.disconnect())
-ipcMain.handle('session:connect', (_, { params }) => socketService?.connectSession(params))
-ipcMain.handle('session:disconnect', (_, { params }) => socketService?.disconnectSession(params))
-ipcMain.handle('session:share-files', (_, { params }) => socketService?.shareFiles(params))
-ipcMain.handle('session:accept-files', (_, { params }) => socketService?.acceptFiles(params))
-ipcMain.handle('session:create-tunnel', (_, { params }) => socketService?.createTunnel(params))
+handleTrusted('socket:connect', () => socketService?.connect())
+handleTrusted('socket:disconnect', () => socketService?.disconnect())
+handleTrusted('session:connect', (_, { params }) => socketService?.connectSession(params))
+handleTrusted('session:disconnect', (_, { params }) => socketService?.disconnectSession(params))
+handleTrusted('session:share-files', (_, { params }) => socketService?.shareFiles(params))
+handleTrusted('session:accept-files', (_, { params }) => socketService?.acceptFiles(params))
+handleTrusted('session:create-tunnel', (_, { params }) => socketService?.createTunnel(params))
 
-ipcMain.handle('select-folder', async () => {
+handleTrusted('select-folder', async (_, repoId: number) => {
+	if (!Number.isSafeInteger(repoId) || repoId <= 0) throw new Error('Invalid repository ID')
 	const result = await dialog.showOpenDialog({
 		properties: ['openDirectory'],
 	})
@@ -100,8 +146,9 @@ ipcMain.handle('select-folder', async () => {
 		const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'))
 		await access(packageJsonPath)
 
+		const root = await authorizedRepositories.register(repoId, repositoryPath)
 		return {
-			path: repositoryPath,
+			path: root,
 			valid: true,
 			name: packageJson.name ?? '',
 			version: packageJson.version ?? '',
@@ -116,8 +163,8 @@ ipcMain.handle('select-folder', async () => {
 	}
 })
 
-ipcMain.handle('select-files', async (_, repositoryRoot: string) => {
-	const root = await realpath(repositoryRoot)
+handleTrusted('select-files', async (_, repoId: number) => {
+	const root = authorizedRepositories.requireRoot(repoId)
 
 	const result = await dialog.showOpenDialog({
 		title: 'Select files to synchronize',
@@ -135,18 +182,14 @@ ipcMain.handle('select-files', async (_, repositoryRoot: string) => {
 			const realFilePath = await realpath(filePath)
 			const relativePath = path.relative(root, realFilePath)
 
-			const isOutsideRepository =
-				relativePath === '..' ||
-				relativePath.startsWith(`..${path.sep}`) ||
-				path.isAbsolute(relativePath)
-
-			if (isOutsideRepository) {
+			if (!isWithinDirectory(root, realFilePath)) {
 				return {
 					error: `Selected file is outside the repository: ${filePath}`,
 				}
 			}
 
 			const buffer = await readFile(realFilePath)
+			authorizedRepositories.allowFile(repoId, realFilePath)
 
 			return {
 				id: crypto.randomUUID(),

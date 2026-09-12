@@ -22,7 +22,7 @@ export const UnlinkedRepository: React.FC<UnlinkedRepositoryProps> = ({
 
 	const handleSelectFolder = async () => {
 		onClose()
-		const repository = await window.electron.selectFolder()
+		const repository = await window.electron.selectFolder(repo.id)
 		if (!repository) return
 
 		if (!repository.valid) {

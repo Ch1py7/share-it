@@ -30,7 +30,7 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo }) => {
 	}
 	const handleSelectFiles = async () => {
 		if (!currentSession || !currentSession?.repository) return
-		const files = await window.electron.selectFiles(currentSession?.repository?.path)
+		const files = await window.electron.selectFiles(repo.id)
 		if (files.some((f) => f.error)) {
 			setInvalidFiles()
 			return
