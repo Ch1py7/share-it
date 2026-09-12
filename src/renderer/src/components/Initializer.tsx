@@ -34,11 +34,13 @@ export const Initializer = () => {
 
 	useEffect(() => {
 		const checkSession = async () => {
-			await checkToken()
-			await checkUser()
-			await checkRepos()
-
-			setLoading(false)
+			try {
+				await checkToken()
+				await checkUser()
+				await checkRepos()
+			} finally {
+				setLoading(false)
+			}
 		}
 
 		checkSession()
