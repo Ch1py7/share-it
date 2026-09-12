@@ -17,11 +17,16 @@ export const useErrors = () => {
 		setError(REPOSITORY_ERRORS.DIFFERENT_REPOSITORY)
 	}
 
+	const setInvalidFiles = () => {
+		setError(REPOSITORY_ERRORS.FILE_OUT_OF_REPOSITORY)
+	}
+
 	return {
 		error,
 		customMessage,
 		onClose,
 		setInvalidRepository,
+		setInvalidFiles,
 		setDifferentRepository,
 		setCustomMessage,
 	}

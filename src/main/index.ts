@@ -3,7 +3,7 @@ import path, { join } from 'node:path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { BackendService } from './backend.service'
-import { access, readFile } from 'node:fs/promises'
+import { access, readFile, realpath } from 'node:fs/promises'
 import { simpleGit } from 'simple-git'
 import { createHash } from 'node:crypto'
 import { SocketService } from './services/socket.service'
@@ -117,11 +117,13 @@ ipcMain.handle('select-folder', async () => {
 })
 
 ipcMain.handle('select-files', async (_, repositoryRoot: string) => {
+	const root = await realpath(repositoryRoot)
+
 	const result = await dialog.showOpenDialog({
 		title: 'Select files to synchronize',
 		buttonLabel: 'Select',
 		properties: ['openFile', 'multiSelections'],
-		defaultPath: repositoryRoot,
+		defaultPath: root,
 	})
 
 	if (result.canceled) {
@@ -130,13 +132,26 @@ ipcMain.handle('select-files', async (_, repositoryRoot: string) => {
 
 	const files = await Promise.all(
 		result.filePaths.map(async (filePath) => {
-			const id = crypto.randomUUID()
-			const buffer = await readFile(filePath)
+			const realFilePath = await realpath(filePath)
+			const relativePath = path.relative(root, realFilePath)
+
+			const isOutsideRepository =
+				relativePath === '..' ||
+				relativePath.startsWith(`..${path.sep}`) ||
+				path.isAbsolute(relativePath)
+
+			if (isOutsideRepository) {
+				return {
+					error: `Selected file is outside the repository: ${filePath}`,
+				}
+			}
+
+			const buffer = await readFile(realFilePath)
 
 			return {
-				id,
-				name: path.basename(filePath),
-				relativePath: path.relative(repositoryRoot, filePath),
+				id: crypto.randomUUID(),
+				name: path.basename(realFilePath),
+				relativePath,
 				content: buffer.toString('base64'),
 				hash: createHash('sha256').update(buffer).digest('hex'),
 				size: buffer.length,

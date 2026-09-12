@@ -116,6 +116,7 @@ interface LocalSecretFile {
 	content: string
 	hash: string
 	size: number
+	error?: string
 }
 
 interface LocalFolder {
