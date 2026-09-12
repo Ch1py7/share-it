@@ -25,8 +25,8 @@ export const Files: React.FC<FilesProps> = ({
 	const currentFilePathsSet = useMemo(() => {
 		if (!currentTransfer) return new Set<string>()
 
-		const filepaths = Array.from(currentTransfer.values()).flatMap((batch) => batch.filepaths)
-		return new Set(filepaths)
+		const filePaths = Array.from(currentTransfer.values()).flatMap((batch) => batch.filePaths)
+		return new Set(filePaths)
 	}, [currentTransfer])
 
 	const toggleFileSelection = (file: FilesType) => {

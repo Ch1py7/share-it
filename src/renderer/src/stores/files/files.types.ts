@@ -1,6 +1,6 @@
 interface TransferBatch {
 	// status: string
-	filepaths: string[]
+	filePaths: string[]
 	createdAt: number
 }
 
@@ -12,9 +12,9 @@ type TransfersState = Map<number, RepositoryTransfers>
 
 export interface FilesState {
 	transfers: TransfersState
-	addTransfer: (repoId: number, batchId: string, filepaths: string[]) => void
+	addTransfer: (repoId: number, batchId: string, filePaths: string[]) => void
 	getFilesInTransfer: (repoId: number) => {
 		batchId: string
-		filepaths: string[]
+		filePaths: string[]
 	}[]
 }

@@ -164,7 +164,7 @@ interface FailureResponse {
 }
 
 export interface SendFiles {
-	filepaths: string[]
+	filePaths: string[]
 	batchId: string
 }
 
