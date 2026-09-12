@@ -28,10 +28,6 @@ export const challenge = async (verifier: string) => {
 	return base64url(new Uint8Array(hash))
 }
 
-export const formatWithCommas = (num: number) => {
-	return num.toLocaleString('en-US')
-}
-
 export const mergeFiles = (current: Files[], incoming: Files[]): Files[] => {
 	const files = new Map(current.map((file) => [file.relativePath, file]))
 
@@ -42,12 +38,16 @@ export const mergeFiles = (current: Files[], incoming: Files[]): Files[] => {
 	return [...files.values()]
 }
 
-export const sizePrefix = (size: number) => {
-	if (size > 999) {
-		return 'mb'
-	} else if (size > 999999) {
-		return 'gb'
-	} else {
-		return 'kb'
+export const formatFileSize = (sizeInKb: number): string => {
+	if (sizeInKb >= 1_000_000) {
+		const gb = sizeInKb / 1_000_000
+		return `${gb.toLocaleString('en-US', { maximumFractionDigits: 2 })} gb`
 	}
+
+	if (sizeInKb >= 1_000) {
+		const mb = sizeInKb / 1_000
+		return `${mb.toLocaleString('en-US', { maximumFractionDigits: 2 })} mb`
+	}
+
+	return `${sizeInKb.toLocaleString('en-US')} kb`
 }

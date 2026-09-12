@@ -1,5 +1,5 @@
 import { Files as FilesType } from '@renderer/stores/sessions/sessions.types'
-import { cn, formatWithCommas, sizePrefix } from '@renderer/lib/utils'
+import { cn, formatFileSize } from '@renderer/lib/utils'
 import { FileCode, LockKeyhole, Send, Trash2 } from 'lucide-react'
 import { Session } from '@renderer/stores/sessions/sessions.types'
 import { Tooltip } from '@renderer/components/Tooltip'
@@ -93,8 +93,7 @@ export const Files: React.FC<FilesProps> = ({
 
 						<div className="flex items-center gap-3">
 							<span className="min-w-20 text-right text-sm text-zinc-500">
-								{formatWithCommas(file.size)}
-								{sizePrefix(file.size)}
+								{formatFileSize(file.size)}
 							</span>
 
 							{isPending ? (
