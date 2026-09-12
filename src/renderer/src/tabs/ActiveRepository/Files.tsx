@@ -45,12 +45,12 @@ export const Files: React.FC<FilesProps> = ({
 		setSelectedFiles([])
 	}
 
-	const isPendingSync = (fileId: string) => currentFilePathsSet.has(fileId)
+	const isPendingSync = (relativePath: string) => currentFilePathsSet.has(relativePath)
 
 	return (
 		<div className="flex-1 overflow-y-auto relative">
 			{currentSession.files.map((file) => {
-				const isPending = isPendingSync(file.id)
+				const isPending = isPendingSync(file.relativePath)
 				return (
 					<div
 						key={file.relativePath}
