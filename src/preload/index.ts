@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
 import {
 	AcceptFiles,
 	ConnectSession,
@@ -18,7 +17,6 @@ const api = {}
 if (process.contextIsolated) {
 	try {
 		contextBridge.exposeInMainWorld('electron', {
-			...electronAPI,
 			openExternal: (url: string) => ipcRenderer.invoke('be:open-login', url),
 
 			onGithubCallback: (callback: (url: string) => void) => {
@@ -91,7 +89,6 @@ if (process.contextIsolated) {
 } else {
 	// @ts-expect-error
 	window.electron = {
-		...electronAPI,
 		openExternal: (url: string) => ipcRenderer.invoke('be:open-login', url),
 	}
 
