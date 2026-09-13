@@ -50,8 +50,8 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo }) => {
 	return (
 		<>
 			{error && <ErrorFallback error={error} onClose={onClose} />}
-			<Card className="flex flex-1 w-full flex-col overflow-hidden">
-				<div className="flex items-center justify-between border-b border-zinc-200 p-5">
+			<Card className="flex w-full flex-col">
+				<div className="flex items-center justify-between p-5">
 					<div>
 						<h2 className="font-semibold text-zinc-900">Repository Files</h2>
 

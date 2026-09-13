@@ -12,6 +12,7 @@ import { Errors } from './Errors'
 import { UnlinkedRepository } from './UnlinkedRepository'
 import { LinkedRepository } from './LinkedRepository'
 import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
+import { TransferHistory } from './TransferHistory'
 
 interface ActiveRepositoryProps {
 	repo: GithubRepo
@@ -136,17 +137,20 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 				</div>
 			</div>
 			<Errors customMessage={customMessage} error={error} onClose={onClose} repo={repo} />
-			{currentSession?.repository ? (
-				<LinkedRepository repo={repo} />
-			) : (
-				<UnlinkedRepository
-					onClose={onClose}
-					repo={repo}
-					setCustomMessage={setCustomMessage}
-					setDifferentRepository={setDifferentRepository}
-					setInvalidRepository={setInvalidRepository}
-				/>
-			)}
+			<div className="flex flex-1 overflow-hidden gap-4">
+				{currentSession?.repository ? (
+					<LinkedRepository repo={repo} />
+				) : (
+					<UnlinkedRepository
+						onClose={onClose}
+						repo={repo}
+						setCustomMessage={setCustomMessage}
+						setDifferentRepository={setDifferentRepository}
+						setInvalidRepository={setInvalidRepository}
+					/>
+				)}
+				<TransferHistory repoId={repo.id} />
+			</div>
 		</div>
 	)
 }

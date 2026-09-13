@@ -40,7 +40,7 @@ export const UnlinkedRepository: React.FC<UnlinkedRepositoryProps> = ({
 	}
 
 	return (
-		<Card className="flex flex-1 min-h-0 w-full flex-col items-center justify-center p-10">
+		<Card className="flex min-h-0 w-full flex-col items-center justify-center">
 			<div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-sky-100 text-sky-700">
 				<FolderOpen size={46} />
 			</div>

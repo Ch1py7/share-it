@@ -1,0 +1,109 @@
+import { Card } from '@renderer/components/Card'
+import { useFilesStore } from '@renderer/stores/files/files.store'
+import { CheckCircle2, ClockFading, FileCode2, History } from 'lucide-react'
+import { useMemo } from 'react'
+
+interface TransferHistoryProps {
+	repoId: number
+}
+
+export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId }) => {
+	const currentTransfers = useFilesStore((state) => state.transfers.get(repoId))
+
+	const transfers = useMemo(() => {
+		if (!currentTransfers) return []
+
+		return [...currentTransfers.entries()].reverse()
+	}, [currentTransfers])
+
+	return (
+		<Card className="flex min-w-sm flex-col overflow-hidden">
+			<div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4">
+				<div className="flex items-center gap-3">
+					<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">
+						<ClockFading size={18} />
+					</div>
+
+					<div>
+						<h2 className="text-sm font-semibold text-zinc-900">Transfer history</h2>
+
+						<p className="text-xs text-zinc-500">Recent synchronization batches</p>
+					</div>
+				</div>
+
+				{Boolean(transfers.length) && (
+					<div className="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
+						{transfers.length} transfers
+					</div>
+				)}
+			</div>
+
+			{transfers.length ? (
+				<div className="divide-y divide-zinc-100">
+					{transfers.map(([id, batch]) => (
+						<div key={id} className="group px-5 py-4 transition-colors hover:bg-zinc-50">
+							<div className="flex items-start justify-between gap-4">
+								<div className="min-w-0 flex-1">
+									<div className="flex items-center gap-2">
+										<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+											<CheckCircle2 size={15} />
+										</div>
+
+										<div className="min-w-0">
+											<div className="flex items-center gap-2">
+												<p className="text-sm font-medium text-zinc-900">Synchronization</p>
+
+												<span className="rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">
+													#{id.slice(0, 7)}
+												</span>
+											</div>
+
+											<p className="mt-0.5 text-xs text-zinc-500">
+												{new Date(batch.createdAt).toLocaleString()}
+											</p>
+										</div>
+									</div>
+
+									<div className="mt-4 space-y-1.5 pl-9">
+										{batch.filePaths.map((filePath) => (
+											<div
+												key={filePath}
+												className="flex min-w-0 items-center gap-2 text-xs text-zinc-500"
+											>
+												<FileCode2 size={13} className="shrink-0 text-zinc-400" />
+
+												<span className="truncate">{filePath}</span>
+											</div>
+										))}
+									</div>
+								</div>
+
+								<div className="flex shrink-0 flex-col items-end gap-2">
+									<span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+										Completed
+									</span>
+
+									<span className="text-xs text-zinc-400">
+										{batch.filePaths.length} {batch.filePaths.length === 1 ? 'file' : 'files'}
+									</span>
+								</div>
+							</div>
+						</div>
+					))}
+				</div>
+			) : (
+				<div className="flex flex-1 flex-col items-center justify-center px-8 py-12 text-center">
+					<div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-400">
+						<History size={22} />
+					</div>
+
+					<p className="mt-4 text-sm font-medium text-zinc-800">No transfers yet</p>
+
+					<p className="mt-1 max-w-56 text-xs leading-5 text-zinc-500">
+						Your synchronization history will appear here after sending your first batch.
+					</p>
+				</div>
+			)}
+		</Card>
+	)
+}

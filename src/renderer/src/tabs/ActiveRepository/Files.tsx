@@ -21,13 +21,13 @@ export const Files: React.FC<FilesProps> = ({
 	selectedFiles,
 	setSelectedFiles,
 }) => {
-	const currentTransfer = useFilesStore((state) => state.transfers.get(repoId))
+	const currentTransfers = useFilesStore((state) => state.transfers.get(repoId))
 	const currentFilePathsSet = useMemo(() => {
-		if (!currentTransfer) return new Set<string>()
+		if (!currentTransfers) return new Set<string>()
 
-		const filePaths = Array.from(currentTransfer.values()).flatMap((batch) => batch.filePaths)
+		const filePaths = Array.from(currentTransfers.values()).flatMap((batch) => batch.filePaths)
 		return new Set(filePaths)
-	}, [currentTransfer])
+	}, [currentTransfers])
 
 	const toggleFileSelection = (file: FilesType) => {
 		setSelectedFiles((prev) => {
