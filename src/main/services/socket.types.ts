@@ -34,7 +34,7 @@ export interface ServerToClientEvents {
 		senderId: string
 		senderName: string
 	}) => void
-	'session:peer-requested-data': (data: { batchId: string }) => void
+	'session:peer-requested-data': (data: { batchId: string; receiverId: string }) => void
 	'session:error': (data: { message: string }) => void
 	'session:files-delivery': (data: { batchId: string }) => void
 	'session:files-to-send': (data: { batchId: string; repoId: string }) => void

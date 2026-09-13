@@ -4,6 +4,7 @@ import { formatFileSize } from '@renderer/lib/utils'
 import { useFilesStore } from '@renderer/stores/files/files.store'
 import { CheckCircle2, Clock3, ClockFading, FileCode2, History, Send } from 'lucide-react'
 import { useMemo } from 'react'
+import { toast } from 'sonner'
 
 interface TransferHistoryProps {
 	repoId: number
@@ -45,6 +46,15 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 
 		return [...currentTransfers.entries()].reverse()
 	}, [currentTransfers])
+
+	const acceptBatch = async (batchId: string, senderId: string) => {
+		try {
+			await window.electron.socket.acceptFiles({ batchId, senderId })
+			toast.info('Transfer accepted. Waiting for files…')
+		} catch (error) {
+			toast.error('Could not accept files', { description: String(error) })
+		}
+	}
 
 	return (
 		<Card className="flex min-w-sm flex-col overflow-hidden">
@@ -129,6 +139,15 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 										</div>
 
 										<div className="mt-4 space-y-1.5 pl-9">
+											{batch.status === 'pending' && batch.senderId && (
+												<button
+													type="button"
+													onClick={() => void acceptBatch(id, batch.senderId!)}
+													className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700"
+												>
+													Accept batch{batch.senderName ? ` from ${batch.senderName}` : ''}
+												</button>
+											)}
 											{batch.files.map((file) => (
 												<div
 													key={file.id}
@@ -141,7 +160,7 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 													</div>
 
 													<span className="ml-auto min-w-16 shrink-0 text-right text-zinc-400">
-														{formatFileSize(file.size)}
+														{file.hash ? formatFileSize(file.size) : '—'}
 													</span>
 												</div>
 											))}

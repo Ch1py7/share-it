@@ -30,7 +30,7 @@ export const Files: React.FC<FilesProps> = ({
 		if (!currentTransfers) return new Set<string>()
 
 		const filePaths = Array.from(currentTransfers.values()).flatMap((batch) =>
-			batch.files.map((f) => f.relativePath)
+			batch.status === 'received' ? [] : batch.files.map((f) => f.relativePath)
 		)
 		return new Set(filePaths)
 	}, [currentTransfers])

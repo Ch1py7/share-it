@@ -13,6 +13,11 @@ import {
 export class SocketService {
 	private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null
 	private readonly window: BrowserWindow
+	private readonly connectedRepoIds = new Set<number>()
+
+	private getCurrentRepoId(): number | null {
+		return this.connectedRepoIds.size === 1 ? [...this.connectedRepoIds][0] : null
+	}
 
 	constructor(window: BrowserWindow) {
 		this.window = window
@@ -54,7 +59,10 @@ export class SocketService {
 		})
 
 		this.socket.on('session:files-offer-received', (data) => {
-			this.window.webContents.send('session:files-offer-received', data)
+			this.window.webContents.send('session:files-offer-received', {
+				...data,
+				repoId: this.getCurrentRepoId(),
+			})
 		})
 
 		this.socket.on('session:batch', (data) => {
@@ -70,11 +78,10 @@ export class SocketService {
 		})
 
 		this.socket.on('session:files-delivery', (data) => {
-			this.window.webContents.send('session:files-delivery', data)
-		})
-
-		this.socket.on('session:files-delivery', (data) => {
-			this.window.webContents.send('session:files-delivery', data)
+			this.window.webContents.send('session:files-delivery', {
+				...data,
+				repoId: this.getCurrentRepoId(),
+			})
 		})
 
 		this.socket.on('session:files-to-send', (data) => {
@@ -88,6 +95,7 @@ export class SocketService {
 	public disconnect() {
 		this.socket?.disconnect()
 		this.socket = null
+		this.connectedRepoIds.clear()
 	}
 
 	public connectSession(payload: ConnectSession) {
@@ -96,10 +104,12 @@ export class SocketService {
 		}
 
 		this.socket?.emit('session:connect', payload)
+		this.connectedRepoIds.add(Number(payload.repoId))
 	}
 
 	public disconnectSession(payload: DisconnectSession) {
 		this.socket?.emit('session:disconnect', payload)
+		this.connectedRepoIds.delete(Number(payload.repoId))
 	}
 
 	public shareFiles(payload: ShareFiles) {

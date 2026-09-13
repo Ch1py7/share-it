@@ -70,9 +70,10 @@ export interface CreateTunnel {
 
 interface OnFilesOfferReceived {
 	batchId: string
-	filenames: string
+	filenames: string[]
 	senderId: string
 	senderName: string
+	repoId: number | null
 }
 
 interface OnPeerRequestedData {
@@ -86,6 +87,7 @@ interface OnError {
 
 interface OnFilesDelivery {
 	batchId: string
+	repoId: number | null
 }
 
 export interface ConnectSession {
