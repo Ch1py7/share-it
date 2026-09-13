@@ -44,11 +44,11 @@ export const Layout = () => {
 	const isSelectedActiveRepo = useHasSession(selectedRepo?.id)
 
 	return (
-		<div className="h-screen w-screen flex flex-col">
+		<>
 			{selectedRepo && (
 				<CreateSessionModal isOpen={isOpen} onCancel={onCancel} selectedRepo={selectedRepo} />
 			)}
-			<div className="flex w-full">
+			<div className="flex w-full h-screen">
 				<Sidebar
 					page={page}
 					setPage={setPage}
@@ -72,6 +72,6 @@ export const Layout = () => {
 					</div>
 				</div>
 			</div>
-		</div>
+		</>
 	)
 }
