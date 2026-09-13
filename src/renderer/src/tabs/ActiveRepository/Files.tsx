@@ -12,6 +12,7 @@ interface FilesProps {
 	onDelete: (files: FilesType[]) => void
 	selectedFiles: FilesType[]
 	setSelectedFiles: React.Dispatch<React.SetStateAction<FilesType[]>>
+	hoveredFileIds: Set<string>
 }
 
 export const Files: React.FC<FilesProps> = ({
@@ -20,6 +21,7 @@ export const Files: React.FC<FilesProps> = ({
 	onDelete,
 	selectedFiles,
 	setSelectedFiles,
+	hoveredFileIds,
 }) => {
 	const currentTransfers = useFilesStore((state) => state.transfers.get(repoId))
 	const currentFilePathsSet = useMemo(() => {
@@ -46,14 +48,17 @@ export const Files: React.FC<FilesProps> = ({
 		<div className="flex-1 overflow-y-auto">
 			{currentSession.files.map((file) => {
 				const isPending = isPendingSync(file.relativePath)
+				const isHighlighted = hoveredFileIds.has(file.id)
 				return (
 					<div
 						key={file.relativePath}
 						className={cn(
 							'flex items-center justify-between border-b border-zinc-100 border-l-2 px-5 py-3 transition',
-							isPending
-								? 'border-l-amber-400 bg-amber-50/40'
-								: 'border-l-transparent hover:bg-zinc-50'
+							isHighlighted
+								? 'border-l-sky-500 bg-sky-50 ring-1 ring-inset ring-sky-200'
+								: isPending
+									? 'border-l-amber-400 bg-amber-50/40'
+									: 'border-l-transparent hover:bg-zinc-50'
 						)}
 					>
 						<div className="flex items-center gap-3">

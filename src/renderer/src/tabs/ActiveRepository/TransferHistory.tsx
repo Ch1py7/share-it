@@ -7,6 +7,7 @@ import { useMemo } from 'react'
 
 interface TransferHistoryProps {
 	repoId: number
+	setHoveredFileIds: React.Dispatch<React.SetStateAction<Set<string>>>
 }
 
 const transferStatus = {
@@ -36,7 +37,7 @@ const transferStatus = {
 	},
 } as const
 
-export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId }) => {
+export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHoveredFileIds }) => {
 	const currentTransfers = useFilesStore((state) => state.transfers.get(repoId))
 
 	const transfers = useMemo(() => {
@@ -74,7 +75,13 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId }) => {
 						const StatusIcon = status.icon
 
 						return (
-							<div key={id} className="px-5 py-4 transition-colors hover:bg-zinc-50">
+							<div
+								role="none"
+								onMouseEnter={() => setHoveredFileIds(new Set(batch.files.map((file) => file.id)))}
+								onMouseLeave={() => setHoveredFileIds(new Set())}
+								key={id}
+								className="px-5 py-4 transition-colors hover:bg-zinc-50"
+							>
 								<div className="flex items-start justify-between gap-4">
 									<div className="min-w-0 flex-1">
 										<div className="flex items-center justify-between">

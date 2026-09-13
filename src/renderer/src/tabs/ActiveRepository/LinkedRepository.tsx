@@ -14,9 +14,10 @@ import { Tooltip } from '@renderer/components/Tooltip'
 
 interface LinkedRepositoryProps {
 	repo: GithubRepo
+	hoveredFileIds: Set<string>
 }
 
-export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo }) => {
+export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hoveredFileIds }) => {
 	const [selectedFiles, setSelectedFiles] = useState<FilesType[]>([])
 	const { removeSessionFiles, setSessionFiles } = useSessionsStore(
 		useShallow((state) => ({
@@ -108,6 +109,7 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo }) => {
 						onDelete={onDeleteFiles}
 						selectedFiles={selectedFiles}
 						setSelectedFiles={setSelectedFiles}
+						hoveredFileIds={hoveredFileIds}
 					/>
 				)}
 				<AddFiles onClick={handleSelectFiles} full={currentSession.files.length === 0} />

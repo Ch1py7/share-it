@@ -13,6 +13,7 @@ import { UnlinkedRepository } from './UnlinkedRepository'
 import { LinkedRepository } from './LinkedRepository'
 import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
 import { TransferHistory } from './TransferHistory'
+import { useState } from 'react'
 
 interface ActiveRepositoryProps {
 	repo: GithubRepo
@@ -20,6 +21,7 @@ interface ActiveRepositoryProps {
 }
 
 export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack }) => {
+	const [hoveredFileIds, setHoveredFileIds] = useState<Set<string>>(new Set())
 	const removeSession = useSessionsStore((state) => state.removeSession)
 	const user = useUserStore((state) => state.user)
 	const {
@@ -139,7 +141,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 			<Errors customMessage={customMessage} error={error} onClose={onClose} repo={repo} />
 			<div className="flex flex-1 overflow-hidden gap-4">
 				{currentSession?.repository ? (
-					<LinkedRepository repo={repo} />
+					<LinkedRepository repo={repo} hoveredFileIds={hoveredFileIds} />
 				) : (
 					<UnlinkedRepository
 						onClose={onClose}
@@ -149,7 +151,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 						setInvalidRepository={setInvalidRepository}
 					/>
 				)}
-				<TransferHistory repoId={repo.id} />
+				<TransferHistory repoId={repo.id} setHoveredFileIds={setHoveredFileIds} />
 			</div>
 		</div>
 	)
