@@ -1,11 +1,36 @@
 import { Card } from '@renderer/components/Card'
+import { formatFileSize } from '@renderer/lib/utils'
 import { useFilesStore } from '@renderer/stores/files/files.store'
-import { CheckCircle2, ClockFading, FileCode2, History } from 'lucide-react'
+import { CheckCircle2, Clock3, ClockFading, FileCode2, History, Send } from 'lucide-react'
 import { useMemo } from 'react'
 
 interface TransferHistoryProps {
 	repoId: number
 }
+
+const transferStatus = {
+	sent: {
+		label: 'Sent',
+		description: 'You sent this synchronization batch.',
+		icon: Send,
+		className: 'bg-sky-50 text-sky-700',
+		iconClassName: 'bg-sky-50 text-sky-600',
+	},
+	pending: {
+		label: 'Pending',
+		description: 'This batch is waiting to be accepted and synchronized on this device.',
+		icon: Clock3,
+		className: 'bg-amber-50 text-amber-700',
+		iconClassName: 'bg-amber-50 text-amber-600',
+	},
+	received: {
+		label: 'Received',
+		description: 'This synchronization batch has been received on this device.',
+		icon: CheckCircle2,
+		className: 'bg-emerald-50 text-emerald-700',
+		iconClassName: 'bg-emerald-50 text-emerald-600',
+	},
+} as const
 
 export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId }) => {
 	const currentTransfers = useFilesStore((state) => state.transfers.get(repoId))
@@ -40,56 +65,73 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId }) => {
 
 			{transfers.length ? (
 				<div className="divide-y divide-zinc-100">
-					{transfers.map(([id, batch]) => (
-						<div key={id} className="group px-5 py-4 transition-colors hover:bg-zinc-50">
-							<div className="flex items-start justify-between gap-4">
-								<div className="min-w-0 flex-1">
-									<div className="flex items-center gap-2">
-										<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-											<CheckCircle2 size={15} />
-										</div>
+					{transfers.map(([id, batch]) => {
+						const status = transferStatus[batch.status]
+						const StatusIcon = status.icon
 
-										<div className="min-w-0">
+						return (
+							<div key={id} className="group px-5 py-4 transition-colors hover:bg-zinc-50">
+								<div className="flex items-start justify-between gap-4">
+									<div className="min-w-0 flex-1">
+										<div className="flex items-center justify-between">
 											<div className="flex items-center gap-2">
-												<p className="text-sm font-medium text-zinc-900">Synchronization</p>
+												<div
+													className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${status.iconClassName}`}
+												>
+													<StatusIcon size={15} />
+												</div>
 
-												<span className="rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">
-													#{id.slice(0, 7)}
+												<div className="min-w-0">
+													<div className="flex items-center gap-2">
+														<p className="text-sm font-medium text-zinc-900">Synchronization</p>
+
+														<span className="rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500">
+															#{id.slice(6, 16)}
+														</span>
+													</div>
+
+													<p className="mt-0.5 text-xs text-zinc-500">
+														{new Date(batch.createdAt).toLocaleString()}
+													</p>
+												</div>
+											</div>
+
+											<div className="flex shrink-0 flex-col items-end">
+												<span
+													className={`rounded-lg px-2 py-1 text-xs font-medium ${status.className}`}
+												>
+													{status.label}
+												</span>
+
+												<span className="text-xs text-zinc-400">
+													{batch.files.length} {batch.files.length === 1 ? 'file' : 'files'}
 												</span>
 											</div>
+										</div>
 
-											<p className="mt-0.5 text-xs text-zinc-500">
-												{new Date(batch.createdAt).toLocaleString()}
-											</p>
+										<div className="mt-4 space-y-1.5 pl-9">
+											{batch.files.map((file) => (
+												<div
+													key={file.id}
+													className="flex min-w-0 items-center gap-4 text-xs text-zinc-500"
+												>
+													<div className="flex min-w-0 flex-1 items-center gap-2">
+														<FileCode2 size={13} className="shrink-0 text-zinc-400" />
+
+														<span className="truncate">{file.relativePath}</span>
+													</div>
+
+													<span className="ml-auto min-w-16 shrink-0 text-right text-zinc-400">
+														{formatFileSize(file.size)}
+													</span>
+												</div>
+											))}
 										</div>
 									</div>
-
-									<div className="mt-4 space-y-1.5 pl-9">
-										{batch.filePaths.map((filePath) => (
-											<div
-												key={filePath}
-												className="flex min-w-0 items-center gap-2 text-xs text-zinc-500"
-											>
-												<FileCode2 size={13} className="shrink-0 text-zinc-400" />
-
-												<span className="truncate">{filePath}</span>
-											</div>
-										))}
-									</div>
-								</div>
-
-								<div className="flex shrink-0 flex-col items-end gap-2">
-									<span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-										Completed
-									</span>
-
-									<span className="text-xs text-zinc-400">
-										{batch.filePaths.length} {batch.filePaths.length === 1 ? 'file' : 'files'}
-									</span>
 								</div>
 							</div>
-						</div>
-					))}
+						)
+					})}
 				</div>
 			) : (
 				<div className="flex flex-1 flex-col items-center justify-center px-8 py-12 text-center">

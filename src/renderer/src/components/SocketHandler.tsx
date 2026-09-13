@@ -64,11 +64,8 @@ export const SocketHandler = () => {
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onBatch((files) => {
 			const currentSession = sessions.get(files.repoId)
-			const filePaths =
-				currentSession?.files
-					.filter((f) => files.filesIds.includes(f.id))
-					.map((f) => f.relativePath) ?? []
-			addTransfer(files.repoId, files.batchId, filePaths)
+			const sessionFiles = currentSession?.files.filter((f) => files.filesIds.includes(f.id)) ?? []
+			addTransfer(files.repoId, files.batchId, sessionFiles, 'sent')
 		})
 
 		return () => {
@@ -92,9 +89,11 @@ export const SocketHandler = () => {
 			const currentBatch = currentTransfer?.get(file.batchId)
 			if (!currentBatch) return
 
+			const filePaths = currentBatch.files.map((f) => f.relativePath)
+
 			window.electron.be.sendFiles({
 				batchId: file.batchId,
-				filePaths: currentBatch.filePaths,
+				filePaths,
 				repoId: file.repoId,
 			})
 		})

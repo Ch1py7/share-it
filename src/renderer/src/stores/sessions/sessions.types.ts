@@ -20,7 +20,6 @@ export interface Files {
 	id: string
 	name: string
 	relativePath: string
-	content: string
 	hash: string
 	size: number
 }

@@ -3,22 +3,15 @@ import { FilesState, RepositoryTransfers } from './files.types'
 
 export const useFilesStore = create<FilesState>()((set, get) => ({
 	transfers: new Map(),
-	addTransfer: (repoId, batchId, filePaths) => {
+	addTransfer: (repoId, batchId, files, status) => {
 		const next = new Map(get().transfers)
 
 		const currentRepoMap: RepositoryTransfers = next.get(repoId)
 			? new Map(next.get(repoId))
 			: new Map()
 
-		currentRepoMap.set(batchId, { filePaths, createdAt: Date.now() })
+		currentRepoMap.set(batchId, { files, createdAt: Date.now(), status })
 		next.set(repoId, currentRepoMap)
 		set({ transfers: next })
-	},
-	getFilesInTransfer: (repoId) => {
-		const currentTransfers = get().transfers.get(repoId)
-		if (!currentTransfers) return []
-		const transfersArr = Array.from(currentTransfers)
-
-		return transfersArr.map(([batchId, batch]) => ({ batchId, filePaths: batch.filePaths }))
 	},
 }))
