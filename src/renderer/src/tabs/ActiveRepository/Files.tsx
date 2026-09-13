@@ -93,7 +93,8 @@ export const Files: React.FC<FilesProps> = ({
 								<Tooltip
 									content="This file is pending synchronization and cannot be removed."
 									tooltipClassNames="w-56 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 shadow-lg"
-									align="right"
+									align="center"
+									position="left"
 								>
 									<div className="flex h-8 w-8 items-center justify-center rounded-lg text-amber-500">
 										<LockKeyhole size={15} />

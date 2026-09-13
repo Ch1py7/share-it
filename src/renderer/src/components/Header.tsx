@@ -1,6 +1,6 @@
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { useUserStore } from '@renderer/stores/user/user.store'
-import { Bell, LogOut, Search, Settings, User2, Users } from 'lucide-react'
+import { Bell, LogOut, Search, User2, Users } from 'lucide-react'
 import { CurrentSessions } from './tooltips/CurrentSessions'
 import { Tooltip } from './Tooltip'
 import { useShallow } from 'zustand/shallow'
@@ -15,23 +15,8 @@ export const Header = () => {
 		<header className="sticky z-50 top-0 border-b border-zinc-200/80 bg-white/80 backdrop-blur-xl">
 			<div className="flex h-16 items-center justify-between px-6">
 				<div className="flex items-center gap-3">
-					<div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 text-white font-bold">
-						S
-					</div>
-
-					<div>
-						<h1 className="text-lg font-semibold tracking-tight text-zinc-900">Share-it</h1>
-
-						<p className="text-xs text-zinc-500">Collaborative version control</p>
-					</div>
-
 					{sessions.size > 0 && (
-						<Tooltip
-							className="ml-3"
-							tooltipClassNames="w-full"
-							position="bottom"
-							content={<CurrentSessions />}
-						>
+						<Tooltip tooltipClassNames="w-full" position="bottom" content={<CurrentSessions />}>
 							<div className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 py-1.5">
 								<div className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-900 text-white ms-3">
 									<Users size={14} />
@@ -69,13 +54,6 @@ export const Header = () => {
 						className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
 					>
 						<Bell size={18} />
-					</button>
-
-					<button
-						type="button"
-						className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
-					>
-						<Settings size={18} />
 					</button>
 
 					<button
