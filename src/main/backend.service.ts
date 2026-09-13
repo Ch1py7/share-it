@@ -8,6 +8,7 @@ import { ZipArchive } from 'archiver'
 import path from 'node:path'
 import unzipper from 'unzipper'
 import axios from 'axios'
+import { app } from 'electron'
 
 const requestError = (error: unknown) => {
 	if (axios.isAxiosError(error)) {
@@ -35,16 +36,21 @@ const responseFailure = (data: { message?: string; code?: string }) => ({
 })
 
 export class BackendService {
+	private readonly credentialService =
+		app.isPackaged || !process.env.SHARE_IT_DEV_PROFILE
+			? 'share-it'
+			: `share-it-dev-${process.env.SHARE_IT_DEV_PROFILE}`
+
 	private async getRefreshAccessToken() {
-		return await keytar.getPassword('share-it', 'accessToken')
+		return await keytar.getPassword(this.credentialService, 'accessToken')
 	}
 
 	private async saveRefreshAccessToken(accessToken: string) {
-		await keytar.setPassword('share-it', 'accessToken', accessToken)
+		await keytar.setPassword(this.credentialService, 'accessToken', accessToken)
 	}
 
 	private async clearRefreshAccessToken() {
-		await keytar.deletePassword('share-it', 'accessToken')
+		await keytar.deletePassword(this.credentialService, 'accessToken')
 	}
 
 	public async auth({ code, codeVerifier }: { code: string; codeVerifier: string }) {

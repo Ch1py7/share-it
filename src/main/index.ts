@@ -15,6 +15,15 @@ let socketService: SocketService | null = null
 let rendererUrl: string | null = null
 const authorizedRepositories = new AuthorizedRepositories()
 
+// A second development process can use its own Electron profile and instance lock.
+const devProfile =
+	!app.isPackaged && /^[a-z0-9_-]+$/i.test(process.env.SHARE_IT_DEV_PROFILE ?? '')
+		? process.env.SHARE_IT_DEV_PROFILE
+		: undefined
+if (devProfile) {
+	app.setPath('userData', join(app.getPath('appData'), `share-it-dev-${devProfile}`))
+}
+
 const requireTrustedSender = (event: IpcMainInvokeEvent) => {
 	if (
 		!mainWindow ||
