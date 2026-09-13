@@ -1,6 +1,6 @@
 import { Files as FilesType } from '@renderer/stores/sessions/sessions.types'
 import { cn, formatFileSize } from '@renderer/lib/utils'
-import { FileCode, LockKeyhole, Send, Trash2 } from 'lucide-react'
+import { FileCode, LockKeyhole, Trash2 } from 'lucide-react'
 import { Session } from '@renderer/stores/sessions/sessions.types'
 import { Tooltip } from '@renderer/components/Tooltip'
 import { useFilesStore } from '@renderer/stores/files/files.store'
@@ -38,17 +38,10 @@ export const Files: React.FC<FilesProps> = ({
 		})
 	}
 
-	const handleSendFiles = () => {
-		const currentFiles = selectedFiles.length !== 0 ? selectedFiles : currentSession.files
-		const files = currentFiles.map((file) => ({ filename: file.name, id: file.id }))
-		window.electron.socket.shareFiles({ files, repoId: repoId.toString() })
-		setSelectedFiles([])
-	}
-
 	const isPendingSync = (relativePath: string) => currentFilePathsSet.has(relativePath)
 
 	return (
-		<div className="flex-1 overflow-y-auto relative">
+		<div className="flex-1 overflow-y-auto">
 			{currentSession.files.map((file) => {
 				const isPending = isPendingSync(file.relativePath)
 				return (
@@ -119,24 +112,6 @@ export const Files: React.FC<FilesProps> = ({
 					</div>
 				)
 			})}
-
-			<Tooltip
-				className="absolute bottom-5 right-8"
-				content="Start a session before sending anything"
-				disabled={currentSession.state === 'connected'}
-				tooltipClassNames="p-3 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50 text-sm text-zinc-600 shadow-lg w-[200%]"
-				align="right"
-			>
-				<button
-					type="button"
-					className="flex items-center gap-2 rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-					disabled={currentSession.state !== 'connected' || !currentSession.files?.length}
-					onClick={handleSendFiles}
-				>
-					<Send size={16} />
-					Sync
-				</button>
-			</Tooltip>
 		</div>
 	)
 }

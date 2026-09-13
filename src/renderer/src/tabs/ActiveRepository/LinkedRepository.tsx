@@ -2,7 +2,7 @@ import { Card } from '@renderer/components/Card'
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { GithubRepo } from '@renderer/stores/user/user.types'
 import { Files as FilesType } from '@renderer/stores/sessions/sessions.types'
-import { Trash2 } from 'lucide-react'
+import { Send, Trash2 } from 'lucide-react'
 import { Files } from './Files'
 import { useState } from 'react'
 import { AddFiles } from './AddFiles'
@@ -10,6 +10,7 @@ import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
 import { useShallow } from 'zustand/shallow'
 import { ErrorFallback } from '@renderer/components/ErrorFallback'
 import { useErrors } from '@renderer/hooks/useErrors'
+import { Tooltip } from '@renderer/components/Tooltip'
 
 interface LinkedRepositoryProps {
 	repo: GithubRepo
@@ -39,6 +40,13 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo }) => {
 		setSessionFiles(repo.id, files)
 	}
 
+	const handleSendFiles = () => {
+		const currentFiles = selectedFiles.length !== 0 ? selectedFiles : currentSession.files
+		const files = currentFiles.map((file) => ({ filename: file.name, id: file.id }))
+		window.electron.socket.shareFiles({ files, repoId: repo.id.toString() })
+		setSelectedFiles([])
+	}
+
 	return (
 		<>
 			{error && <ErrorFallback error={error} onClose={onClose} />}
@@ -51,19 +59,45 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo }) => {
 					</div>
 
 					<div className="flex items-center justify-center gap-2">
-						{Boolean(selectedFiles.length) && (
-							<div className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700">
-								{selectedFiles.length} selected
-							</div>
-						)}
-						{Boolean(selectedFiles.length) && (
-							<button
-								type="button"
-								onClick={() => onDeleteFiles(selectedFiles)}
-								className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-red-50 hover:text-red-600"
+						{Boolean(currentSession.files.length) && (
+							<Tooltip
+								content="Start a session before sending anything"
+								disabled={currentSession.state === 'connected'}
+								tooltipClassNames="w-64 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600 shadow-lg"
+								position="left"
+								align="center"
 							>
-								<Trash2 size={15} />
-							</button>
+								<button
+									type="button"
+									className="flex items-center gap-2 rounded-xl border border-sky-600/20 bg-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-sky-600 hover:shadow active:scale-[0.98] disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
+									disabled={currentSession.state !== 'connected' || !currentSession.files?.length}
+									onClick={handleSendFiles}
+								>
+									<Send size={15} strokeWidth={2.2} />
+									Sync{' '}
+									{selectedFiles.length
+										? `(${selectedFiles.length})`
+										: `(${currentSession.files.length})`}
+								</button>
+							</Tooltip>
+						)}
+
+						{Boolean(selectedFiles.length) && (
+							<>
+								<div className="h-5 w-px bg-zinc-200" />
+
+								<div className="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
+									{selectedFiles.length} selected
+								</div>
+
+								<button
+									type="button"
+									onClick={() => onDeleteFiles(selectedFiles)}
+									className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-red-50 hover:text-red-600"
+								>
+									<Trash2 size={15} />
+								</button>
+							</>
 						)}
 					</div>
 				</div>
