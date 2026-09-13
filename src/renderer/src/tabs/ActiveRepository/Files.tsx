@@ -4,7 +4,7 @@ import { FileCode, LockKeyhole, Trash2 } from 'lucide-react'
 import { Session } from '@renderer/stores/sessions/sessions.types'
 import { Tooltip } from '@renderer/components/Tooltip'
 import { useFilesStore } from '@renderer/stores/files/files.store'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { PendingSynchronization } from '@renderer/components/tooltips/PendingSynchronization'
 interface FilesProps {
 	repoId: number
@@ -23,6 +23,8 @@ export const Files: React.FC<FilesProps> = ({
 	setSelectedFiles,
 	hoveredFileIds,
 }) => {
+	const listRef = useRef<HTMLDivElement>(null)
+	const fileRowRefs = useRef(new Map<string, HTMLDivElement>())
 	const currentTransfers = useFilesStore((state) => state.transfers.get(repoId))
 	const currentFilePathsSet = useMemo(() => {
 		if (!currentTransfers) return new Set<string>()
@@ -32,6 +34,20 @@ export const Files: React.FC<FilesProps> = ({
 		)
 		return new Set(filePaths)
 	}, [currentTransfers])
+
+	useEffect(() => {
+		if (!hoveredFileIds.size) return
+
+		const firstHoveredFile = currentSession.files.find((file) => hoveredFileIds.has(file.id))
+		const list = listRef.current
+		const row = firstHoveredFile && fileRowRefs.current.get(firstHoveredFile.id)
+		if (!list || !row) return
+
+		list.scrollTo({
+			top: list.scrollTop + row.getBoundingClientRect().top - list.getBoundingClientRect().top,
+			behavior: 'smooth',
+		})
+	}, [hoveredFileIds, currentSession.files])
 
 	const toggleFileSelection = (file: FilesType) => {
 		setSelectedFiles((prev) => {
@@ -45,13 +61,17 @@ export const Files: React.FC<FilesProps> = ({
 	const isPendingSync = (relativePath: string) => currentFilePathsSet.has(relativePath)
 
 	return (
-		<div className="flex-1 overflow-y-auto">
+		<div ref={listRef} className="flex-1 overflow-y-auto">
 			{currentSession.files.map((file) => {
 				const isPending = isPendingSync(file.relativePath)
 				const isHighlighted = hoveredFileIds.has(file.id)
 				return (
 					<div
 						key={file.relativePath}
+						ref={(element) => {
+							if (element) fileRowRefs.current.set(file.id, element)
+							else fileRowRefs.current.delete(file.id)
+						}}
 						className={cn(
 							'flex items-center justify-between border-b border-zinc-100 border-l-2 px-5 py-3 transition',
 							isHighlighted
