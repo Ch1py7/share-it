@@ -7,6 +7,32 @@ import { PassThrough } from 'node:stream'
 import { ZipArchive } from 'archiver'
 import path from 'node:path'
 import unzipper from 'unzipper'
+import axios from 'axios'
+
+const requestError = (error: unknown) => {
+	if (axios.isAxiosError(error)) {
+		if (!error.response) {
+			return {
+				message: 'Could not connect to the server. Check your connection and try again.',
+				code: 'CONNECTION_ERROR',
+			}
+		}
+		return {
+			message: error.response.data?.message ?? 'The server could not complete the request.',
+			code: error.response.data?.code ?? 'SERVER_ERROR',
+		}
+	}
+	return { message: 'An unexpected error occurred. Please try again.', code: 'UNKNOWN_ERROR' }
+}
+
+const failure = (error: unknown) => ({ success: false as const, error: requestError(error) })
+const responseFailure = (data: { message?: string; code?: string }) => ({
+	success: false as const,
+	error: {
+		message: data?.message ?? 'The server could not complete the request.',
+		code: data?.code ?? 'SERVER_ERROR',
+	},
+})
 
 export class BackendService {
 	private async getRefreshAccessToken() {
@@ -22,35 +48,41 @@ export class BackendService {
 	}
 
 	public async auth({ code, codeVerifier }: { code: string; codeVerifier: string }) {
-		const response = await api.post('/auth/login', { code, code_verifier: codeVerifier })
+		try {
+			const response = await api.post('/auth/login', { code, code_verifier: codeVerifier })
 
-		if (response.status !== 201) {
-			setClientToken('')
-			await this.clearRefreshAccessToken()
+			if (response.status !== 201) {
+				setClientToken('')
+				await this.clearRefreshAccessToken()
+
+				return responseFailure(response.data)
+			}
+
+			await this.saveRefreshAccessToken(response.data.refreshToken)
+			setClientToken(response.data.accessToken)
 
 			return {
-				success: false,
-				error: {
-					message: response.data.message,
-					code: response.data.code,
+				success: true,
+				data: {
+					accessToken: response.data.accessToken,
+					user: response.data.user,
 				},
 			}
-		}
-
-		await this.saveRefreshAccessToken(response.data.refreshToken)
-
-		return {
-			success: true,
-			data: {
-				accessToken: response.data.accessToken,
-				user: response.data.user,
-			},
+		} catch (error) {
+			return failure(error)
 		}
 	}
 
 	public async logout() {
 		try {
-			await api.post('/auth/logout')
+			const response = await api.post('/auth/logout')
+			console.log(response)
+			if (response.status < 200 || response.status >= 300) {
+				return responseFailure(response.data)
+			}
+			return { success: true as const }
+		} catch (error) {
+			return failure(error)
 		} finally {
 			setClientToken('')
 			await this.clearRefreshAccessToken()
@@ -70,77 +102,71 @@ export class BackendService {
 			}
 		}
 
-		const response = await api.post('/auth/refresh', { refreshToken })
+		try {
+			const response = await api.post('/auth/refresh', { refreshToken })
 
-		if (response.status !== 201) {
-			if (ErrorCodes.SESSION_REVOKED === response.data.code) {
-				setClientToken('')
-				await this.clearRefreshAccessToken()
+			if (response.status !== 201) {
+				if (ErrorCodes.SESSION_REVOKED === response.data.code) {
+					setClientToken('')
+					await this.clearRefreshAccessToken()
+				}
+				return responseFailure(response.data)
 			}
+
+			if (response.data.accessToken) {
+				setClientToken(response.data.accessToken)
+			}
+
 			return {
-				success: false,
-				error: {
-					message: response.data.message,
-					code: response.data.code,
-				},
+				success: true,
+				data: response.data,
 			}
-		}
-
-		if (response.data.accessToken) {
-			setClientToken(response.data.accessToken)
-		}
-
-		return {
-			success: true,
-			data: response.data,
+		} catch (error) {
+			return failure(error)
 		}
 	}
 
 	public async getUser() {
-		const response = await api.get('/github/me')
+		try {
+			const response = await api.get('/github/me')
 
-		if (response.status !== 200) {
-			return {
-				success: false,
-				error: {
-					message: response.data.message,
-					code: response.data.code,
-				},
+			if (response.status !== 200) {
+				return responseFailure(response.data)
 			}
-		}
 
-		return {
-			success: true,
-			data: response.data,
+			return {
+				success: true,
+				data: response.data,
+			}
+		} catch (error) {
+			return failure(error)
 		}
 	}
 
-	public async getRepos(params: Params) {
-		const response = await api.get('/github/repos', {
-			params: {
-				type: params?.type ?? '',
-				sort: params?.sort ?? '',
-				direction: params?.direction ?? '',
-				per_page: params?.per_page ?? '',
-				page: params?.page ?? '',
-				since: params?.since ?? '',
-				before: params?.before ?? '',
-			},
-		})
-
-		if (response.status !== 200) {
-			return {
-				success: false,
-				error: {
-					message: response.data.message,
-					code: response.data.code,
+	public async getRepos(params: Params = {}) {
+		try {
+			const response = await api.get('/github/repos', {
+				params: {
+					type: params?.type ?? '',
+					sort: params?.sort ?? '',
+					direction: params?.direction ?? '',
+					per_page: params?.per_page ?? '',
+					page: params?.page ?? '',
+					since: params?.since ?? '',
+					before: params?.before ?? '',
 				},
-			}
-		}
+			})
 
-		return {
-			success: true,
-			data: response.data,
+			if (response.status !== 200) {
+				return responseFailure(response.data)
+			}
+
+			return {
+				success: true,
+				data: response.data,
+			}
+		} catch (error) {
+			return failure(error)
 		}
 	}
 

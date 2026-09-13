@@ -13,6 +13,7 @@ import { Initializer } from './components/Initializer'
 import { SocketHandler } from './components/SocketHandler'
 import { useHasSession } from './hooks/sessions/useHasSession'
 import { useShallow } from 'zustand/shallow'
+import { Toaster } from 'sonner'
 
 export const App = () => {
 	const [selectedRepo, setSelectedRepo] = useState<GithubRepo | null>(null)
@@ -55,6 +56,7 @@ export const App = () => {
 
 	return (
 		<>
+			<Toaster position="top-right" richColors closeButton />
 			<SocketHandler />
 			<Initializer />
 			{loading ? (

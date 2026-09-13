@@ -4,6 +4,7 @@ import { GithubAuth } from '@renderer/lib/GithubAuth'
 import { useUserStore } from '@renderer/stores/user/user.store'
 import { useEffect, useRef, useState } from 'react'
 import { useShallow } from 'zustand/shallow'
+import { toast } from 'sonner'
 
 export const Login = () => {
 	const { setUser, setRepos, setAccessToken } = useUserStore(
@@ -27,12 +28,17 @@ export const Login = () => {
 		const verifier = github.generateVerifier()
 		codeVerifier.current = verifier
 
-		await github.generateChallenge(verifier)
+		try {
+			await github.generateChallenge(verifier)
 
-		const state = crypto.randomUUID()
-		loginState.current = state
+			const state = crypto.randomUUID()
+			loginState.current = state
 
-		github.openBrowser({ state: loginState.current ?? '' })
+			await github.openBrowser({ state: loginState.current ?? '' })
+		} catch {
+			toast.error('Could not start sign in')
+			cancelLogin()
+		}
 	}
 
 	const cancelLogin = () => {
@@ -49,11 +55,21 @@ export const Login = () => {
 				if (auth.success) {
 					setAccessToken(auth.data.accessToken)
 					setUser(auth.data.user)
+					toast.success('Signed in successfully')
+				} else {
+					toast.error('Sign in failed', { description: auth.error.message })
+					return
 				}
 				const repos = await window.electron.be.getRepos()
 				if (repos.success) {
 					setRepos(repos.data)
+				} else {
+					toast.error('Could not load repositories', { description: repos.error.message })
 				}
+			} catch (error) {
+				toast.error('Sign in failed', {
+					description: error instanceof Error ? error.message : 'Please try again.',
+				})
 			} finally {
 				codeVerifier.current = null
 				loginState.current = null

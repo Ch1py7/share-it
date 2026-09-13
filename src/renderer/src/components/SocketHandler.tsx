@@ -2,6 +2,7 @@ import { useFilesStore } from '@renderer/stores/files/files.store'
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
+import { toast } from 'sonner'
 
 export const SocketHandler = () => {
 	const { setSessionState, sessions } = useSessionsStore(
@@ -12,7 +13,7 @@ export const SocketHandler = () => {
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onNotification((notification) => {
-			console.log(notification)
+			toast.info(notification.title, { description: notification.description })
 		})
 
 		return () => {
@@ -22,7 +23,7 @@ export const SocketHandler = () => {
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onSessionNotification((notification) => {
-			console.log(notification)
+			toast.info(notification.title, { description: notification.description })
 		})
 
 		return () => {
@@ -31,8 +32,18 @@ export const SocketHandler = () => {
 	}, [])
 
 	useEffect(() => {
+		return window.electron.socket.onSessionError((error) => {
+			toast.error('Session error', { description: error.message })
+		})
+	}, [])
+
+	useEffect(() => {
 		const unsubscribe = window.electron.socket.onStatus((status) => {
+			const previous = useSessionsStore.getState().sessions.get(status.repoId)
 			setSessionState(status.repoId, status.status)
+			if (previous && previous.state !== 'connected' && status.status === 'connected') {
+				toast.success('Session connected')
+			}
 		})
 
 		return () => {

@@ -15,7 +15,7 @@ declare global {
 				onNotification: (callback: (data: OnNotification) => void) => () => void
 				onSessionNotification: (callback: (data: OnNotification) => void) => () => void
 				onStatus: (callback: (data: OnStatus) => void) => () => void
-				onError: (callback: (data: OnError) => void) => () => void
+				onSessionError: (callback: (data: OnError) => void) => () => void
 				onFilesOfferReceived: (callback: (data: OnFilesOfferReceived) => void) => () => void
 				onBatch: (callback: (data: OnBatch) => void) => () => void
 				onPeerRequestedData: (callback: (data: OnPeerRequestedData) => void) => () => void
@@ -30,7 +30,7 @@ declare global {
 				createTunnel: (params: CreateTunnel) => Promise<void>
 			}
 			be: {
-				logout: () => Promise<any>
+				logout: () => Promise<{ success: true } | FailureResponse>
 				getRepos: (params?: ReposParams) => Promise<CommonResponse<any>>
 				refresh: () => Promise<CommonResponse<RefreshResponse>>
 				auth: (code: string, codeVerifier: string) => Promise<CommonResponse<AuthResponse>>

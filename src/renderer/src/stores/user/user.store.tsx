@@ -1,5 +1,6 @@
 import { GithubRepo, User } from './user.types'
 import { create } from 'zustand'
+import { toast } from 'sonner'
 
 interface UserState {
 	accessToken: string | null
@@ -21,7 +22,14 @@ export const useUserStore = create<UserState>()((set) => ({
 	loading: true,
 	logout: async () => {
 		try {
-			await window.electron.be.logout()
+			const response = await window.electron.be.logout()
+			if (response.success) toast.success('Signed out successfully')
+			else
+				toast.error('Could not complete sign out on the server', {
+					description: response.error.message,
+				})
+		} catch {
+			toast.error('Could not contact the server while signing out')
 		} finally {
 			set({
 				user: null,
