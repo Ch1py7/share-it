@@ -1,4 +1,5 @@
 import { Card } from '@renderer/components/Card'
+import { Tooltip } from '@renderer/components/Tooltip'
 import { formatFileSize } from '@renderer/lib/utils'
 import { useFilesStore } from '@renderer/stores/files/files.store'
 import { CheckCircle2, Clock3, ClockFading, FileCode2, History, Send } from 'lucide-react'
@@ -10,24 +11,27 @@ interface TransferHistoryProps {
 
 const transferStatus = {
 	sent: {
-		label: 'Sent',
-		description: 'You sent this synchronization batch.',
 		icon: Send,
+		label: 'Sent',
+		tooltip: '',
 		className: 'bg-sky-50 text-sky-700',
+		description: 'You sent this synchronization batch',
 		iconClassName: 'bg-sky-50 text-sky-600',
 	},
 	pending: {
-		label: 'Pending',
-		description: 'This batch is waiting to be accepted and synchronized on this device.',
 		icon: Clock3,
+		label: 'Pending',
+		tooltip: 'This synchronization is waiting to be accepted on this device',
 		className: 'bg-amber-50 text-amber-700',
+		description: 'This batch is waiting to be accepted and synchronized on this device',
 		iconClassName: 'bg-amber-50 text-amber-600',
 	},
 	received: {
-		label: 'Received',
-		description: 'This synchronization batch has been received on this device.',
 		icon: CheckCircle2,
+		label: 'Received',
+		tooltip: '',
 		className: 'bg-emerald-50 text-emerald-700',
+		description: 'This synchronization batch has been received on this device',
 		iconClassName: 'bg-emerald-50 text-emerald-600',
 	},
 } as const
@@ -70,7 +74,7 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId }) => {
 						const StatusIcon = status.icon
 
 						return (
-							<div key={id} className="group px-5 py-4 transition-colors hover:bg-zinc-50">
+							<div key={id} className="px-5 py-4 transition-colors hover:bg-zinc-50">
 								<div className="flex items-start justify-between gap-4">
 									<div className="min-w-0 flex-1">
 										<div className="flex items-center justify-between">
@@ -97,11 +101,19 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId }) => {
 											</div>
 
 											<div className="flex shrink-0 flex-col items-end">
-												<span
-													className={`rounded-lg px-2 py-1 text-xs font-medium ${status.className}`}
+												<Tooltip
+													content={status.tooltip}
+													tooltipClassNames="w-56 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-600 shadow-lg"
+													align="center"
+													position="left"
+													disabled={!status.tooltip.length}
 												>
-													{status.label}
-												</span>
+													<span
+														className={`rounded-lg px-2 py-1 text-xs font-medium ${status.className}`}
+													>
+														{status.label}
+													</span>
+												</Tooltip>
 
 												<span className="text-xs text-zinc-400">
 													{batch.files.length} {batch.files.length === 1 ? 'file' : 'files'}

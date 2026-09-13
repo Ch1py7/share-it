@@ -13,23 +13,23 @@ const requestError = (error: unknown) => {
 	if (axios.isAxiosError(error)) {
 		if (!error.response) {
 			return {
-				message: 'Could not connect to the server. Check your connection and try again.',
+				message: 'Could not connect to the server. Check your connection and try again',
 				code: 'CONNECTION_ERROR',
 			}
 		}
 		return {
-			message: error.response.data?.message ?? 'The server could not complete the request.',
+			message: error.response.data?.message ?? 'The server could not complete the request',
 			code: error.response.data?.code ?? 'SERVER_ERROR',
 		}
 	}
-	return { message: 'An unexpected error occurred. Please try again.', code: 'UNKNOWN_ERROR' }
+	return { message: 'An unexpected error occurred. Please try again', code: 'UNKNOWN_ERROR' }
 }
 
 const failure = (error: unknown) => ({ success: false as const, error: requestError(error) })
 const responseFailure = (data: { message?: string; code?: string }) => ({
 	success: false as const,
 	error: {
-		message: data?.message ?? 'The server could not complete the request.',
+		message: data?.message ?? 'The server could not complete the request',
 		code: data?.code ?? 'SERVER_ERROR',
 	},
 })

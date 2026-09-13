@@ -68,7 +68,7 @@ export const Login = () => {
 				}
 			} catch (error) {
 				toast.error('Sign in failed', {
-					description: error instanceof Error ? error.message : 'Please try again.',
+					description: error instanceof Error ? error.message : 'Please try again',
 				})
 			} finally {
 				codeVerifier.current = null

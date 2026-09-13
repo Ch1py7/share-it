@@ -15,17 +15,17 @@ export const SessionStateHelper: React.FC<SessionStateHelperProps> = ({
 
 	const messages = {
 		disconnected:
-			'This session is not linked to a local repository yet. Link a local folder to continue.',
+			'This session is not linked to a local repository yet. Link a local folder to continue',
 		pending:
 			role === 'collaborator'
-				? 'Your repository is ready. Click Connect to join the collaboration session.'
-				: 'Your repository is ready. Click Create Session to start the collaboration session.',
-		loading: 'Your session is starting. This may take a moment.',
+				? 'Your repository is ready. Click Connect to join the collaboration session'
+				: 'Your repository is ready. Click Create Session to start the collaboration session',
+		loading: 'Your session is starting. This may take a moment',
 		connected:
 			role === 'collaborator'
-				? 'Your session is open and ready to synchronize files.'
-				: 'Your session is active and ready for collaborators.',
-		error: error ? errorsContent[error].description : 'Something went wrong with this session.',
+				? 'Your session is open and ready to synchronize files'
+				: 'Your session is active and ready for collaborators',
+		error: error ? errorsContent[error].description : 'Something went wrong with this session',
 	}
 
 	return (

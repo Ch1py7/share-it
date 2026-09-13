@@ -47,7 +47,7 @@ export const Initializer = () => {
 					if (useUserStore.getState().user) await checkRepos()
 				}
 			} catch {
-				toast.error('Could not initialize the app', { description: 'Please try again.' })
+				toast.error('Could not initialize the app', { description: 'Please try again' })
 			} finally {
 				setLoading(false)
 			}

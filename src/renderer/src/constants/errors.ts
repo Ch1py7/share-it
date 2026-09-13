@@ -8,7 +8,7 @@ export const errorsContent: Record<REPOSITORY_ERRORS, { title: string; descripti
 	[REPOSITORY_ERRORS.DIFFERENT_REPOSITORY]: {
 		title: 'Different repository selected',
 		description:
-			'The selected folder belongs to a different repository. Please select the correct repository folder.',
+			'The selected folder belongs to a different repository. Please select the correct repository folder',
 	},
 	[REPOSITORY_ERRORS.INVALID_REPOSITORY]: {
 		title: 'Invalid repository',
@@ -18,7 +18,7 @@ export const errorsContent: Record<REPOSITORY_ERRORS, { title: string; descripti
 	[REPOSITORY_ERRORS.FILE_OUT_OF_REPOSITORY]: {
 		title: 'File outside repository',
 		description:
-			'One or more selected files are outside the repository. Please select files located within the repository.',
+			'One or more selected files are outside the repository. Please select files located within the repository',
 	},
 }
 
