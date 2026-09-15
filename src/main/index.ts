@@ -5,6 +5,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { BackendService } from './backend.service'
 import { access, readFile, realpath } from 'node:fs/promises'
+import { watch, type FSWatcher } from 'node:fs'
 import { simpleGit } from 'simple-git'
 import { createHash } from 'node:crypto'
 import { createConnection, createServer } from 'node:net'
@@ -16,7 +17,86 @@ let socketService: SocketService | null = null
 let rendererUrl: string | null = null
 const authorizedRepositories = new AuthorizedRepositories()
 
-// A second development process can use its own Electron profile and instance lock.
+interface WatchedRepository {
+	root: string
+	watcher: FSWatcher
+	files: Map<string, { id: string; path: string }>
+	timers: Map<string, NodeJS.Timeout>
+	suppressChanges: boolean
+}
+
+const watchedRepositories = new Map<number, WatchedRepository>()
+const fileKey = (filePath: string) =>
+	process.platform === 'win32' ? path.normalize(filePath).toLowerCase() : path.normalize(filePath)
+
+const sharedFileMetadata = async (root: string, filePath: string, id: string) => {
+	const buffer = await readFile(filePath)
+	return {
+		id,
+		name: path.basename(filePath),
+		relativePath: path.relative(root, filePath),
+		content: buffer.toString('base64'),
+		hash: createHash('sha256').update(buffer).digest('hex'),
+		size: buffer.length,
+	}
+}
+
+const stopWatchingRepositories = () => {
+	for (const repository of watchedRepositories.values()) {
+		repository.watcher.close()
+		for (const timer of repository.timers.values()) clearTimeout(timer)
+	}
+	watchedRepositories.clear()
+}
+
+const watchRepository = (repoId: number, root: string) => {
+	const current = watchedRepositories.get(repoId)
+	if (current?.root === root) return current
+	current?.watcher.close()
+
+	const repository: WatchedRepository = {
+		root,
+		files: new Map(),
+		timers: new Map(),
+		suppressChanges: false,
+		watcher: watch(root, { recursive: true, persistent: false }, (_, filename) => {
+			if (repository.suppressChanges) return
+			if (!filename) return
+			const absolutePath = path.resolve(root, filename.toString())
+			const key = fileKey(absolutePath)
+			const trackedFile = repository.files.get(key)
+			if (!trackedFile) return
+
+			const previousTimer = repository.timers.get(key)
+			if (previousTimer) clearTimeout(previousTimer)
+			repository.timers.set(
+				key,
+				setTimeout(async () => {
+					repository.timers.delete(key)
+					try {
+						const file = await sharedFileMetadata(root, trackedFile.path, trackedFile.id)
+						mainWindow?.webContents.send('session:local-file-changed', { repoId, file })
+						socketService?.shareFiles({ repoId: repoId.toString(), files: [file] })
+					} catch {
+						repository.files.delete(key)
+						mainWindow?.webContents.send('session:local-files-removed', {
+							repoId,
+							filesIds: [trackedFile.id],
+						})
+						socketService?.removeFiles({
+							repoId: repoId.toString(),
+							filesIds: [trackedFile.id],
+						})
+					}
+				}, 150)
+			)
+		}),
+	}
+
+	watchedRepositories.set(repoId, repository)
+	return repository
+}
+
 const devProfile =
 	!app.isPackaged && /^[a-z0-9_-]+$/i.test(process.env.SHARE_IT_DEV_PROFILE ?? '')
 		? process.env.SHARE_IT_DEV_PROFILE
@@ -35,9 +115,6 @@ const deliverOAuthCallback = (url: string) => {
 	if (!app.isPackaged) {
 		const otherProfile = devProfile === 'peer' ? 'primary' : 'peer'
 		const connection = createConnection(oauthPipe(otherProfile), () => connection.end(url))
-		connection.on('error', () => {
-			// The other development instance is not running.
-		})
 	}
 }
 
@@ -125,6 +202,7 @@ handleTrusted('be:logout', async () => {
 	try {
 		return await backend.logout()
 	} finally {
+		stopWatchingRepositories()
 		authorizedRepositories.clear()
 	}
 })
@@ -141,7 +219,19 @@ handleTrusted('be:send-files', async (_, { params }) => {
 handleTrusted('be:receive-files', async (_, { params }) => {
 	if (!params || !isBatchId(params.batchId)) throw new Error('Invalid batch')
 	const repositoryPath = authorizedRepositories.requireRoot(params.repoId)
-	return backend.receiveFiles({ batchId: params.batchId, repositoryPath })
+	const watchedRepository = watchedRepositories.get(params.repoId)
+	if (watchedRepository) {
+		watchedRepository.suppressChanges = true
+		for (const timer of watchedRepository.timers.values()) clearTimeout(timer)
+		watchedRepository.timers.clear()
+	}
+	try {
+		return await backend.receiveFiles({ batchId: params.batchId, repositoryPath })
+	} finally {
+		setTimeout(() => {
+			if (watchedRepository) watchedRepository.suppressChanges = false
+		}, 300)
+	}
 })
 
 handleTrusted('socket:connect', () => socketService?.connect())
@@ -149,7 +239,18 @@ handleTrusted('socket:disconnect', () => socketService?.disconnect())
 handleTrusted('session:connect', (_, { params }) => socketService?.connectSession(params))
 handleTrusted('session:disconnect', (_, { params }) => socketService?.disconnectSession(params))
 handleTrusted('session:share-files', (_, { params }) => socketService?.shareFiles(params))
-handleTrusted('session:accept-files', (_, { params }) => socketService?.acceptFiles(params))
+handleTrusted('session:remove-files', (_, { params }) => {
+	const repository = watchedRepositories.get(Number(params.repoId))
+	if (repository) {
+		const removedIds = new Set(params.filesIds)
+		for (const [key, file] of repository.files) {
+			if (removedIds.has(file.id)) repository.files.delete(key)
+		}
+	}
+	return socketService?.removeFiles(params)
+})
+handleTrusted('session:request-catalog', (_, { params }) => socketService?.requestCatalog(params))
+handleTrusted('session:sync-files', (_, { params }) => socketService?.syncFiles(params))
 handleTrusted('session:create-tunnel', (_, { params }) => socketService?.createTunnel(params))
 
 handleTrusted('select-folder', async (_, repoId: number) => {
@@ -172,6 +273,7 @@ handleTrusted('select-folder', async (_, repoId: number) => {
 		await access(packageJsonPath)
 
 		const root = await authorizedRepositories.register(repoId, repositoryPath)
+		watchRepository(repoId, root)
 		return {
 			path: root,
 			valid: true,
@@ -205,25 +307,19 @@ handleTrusted('select-files', async (_, repoId: number) => {
 	const files = await Promise.all(
 		result.filePaths.map(async (filePath) => {
 			const realFilePath = await realpath(filePath)
-			const relativePath = path.relative(root, realFilePath)
-
 			if (!isWithinDirectory(root, realFilePath)) {
 				return {
 					error: `Selected file is outside the repository: ${filePath}`,
 				}
 			}
 
-			const buffer = await readFile(realFilePath)
 			authorizedRepositories.allowFile(repoId, realFilePath)
+			const repository = watchRepository(repoId, root)
+			const key = fileKey(realFilePath)
+			const id = repository.files.get(key)?.id ?? crypto.randomUUID()
+			repository.files.set(key, { id, path: realFilePath })
 
-			return {
-				id: crypto.randomUUID(),
-				name: path.basename(realFilePath),
-				relativePath,
-				content: buffer.toString('base64'),
-				hash: createHash('sha256').update(buffer).digest('hex'),
-				size: buffer.length,
-			}
+			return sharedFileMetadata(root, realFilePath, id)
 		})
 	)
 
@@ -280,3 +376,5 @@ app.on('open-url', (event, url) => {
 	event.preventDefault()
 	deliverOAuthCallback(url)
 })
+
+app.on('before-quit', stopWatchingRepositories)

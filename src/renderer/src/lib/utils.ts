@@ -29,10 +29,11 @@ export const challenge = async (verifier: string) => {
 }
 
 export const mergeFiles = (current: Files[], incoming: Files[]): Files[] => {
-	const files = new Map(current.map((file) => [file.relativePath, file]))
+	const key = (file: Files) => `${file.sourceId ?? 'local'}:${file.relativePath}`
+	const files = new Map(current.map((file) => [key(file), file]))
 
 	for (const file of incoming) {
-		files.set(file.relativePath, file)
+		files.set(key(file), file)
 	}
 
 	return [...files.values()]
@@ -41,13 +42,13 @@ export const mergeFiles = (current: Files[], incoming: Files[]): Files[] => {
 export const formatFileSize = (sizeInKb: number): string => {
 	if (sizeInKb >= 1_000_000) {
 		const gb = sizeInKb / 1_000_000
-		return `${gb.toLocaleString('en-US', { maximumFractionDigits: 2 })} gb`
+		return `${gb.toLocaleString('en-US', { maximumFractionDigits: 2 })} GB`
 	}
 
 	if (sizeInKb >= 1_000) {
 		const mb = sizeInKb / 1_000
-		return `${mb.toLocaleString('en-US', { maximumFractionDigits: 2 })} mb`
+		return `${mb.toLocaleString('en-US', { maximumFractionDigits: 2 })} MB`
 	}
 
-	return `${sizeInKb.toLocaleString('en-US')} kb`
+	return `${sizeInKb.toLocaleString('en-US')} KB`
 }

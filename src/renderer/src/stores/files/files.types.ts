@@ -1,6 +1,6 @@
 import { Files } from '../sessions/sessions.types'
 
-type Status = 'sent' | 'received' | 'pending'
+type Status = 'synchronizing' | 'receiving' | 'sent' | 'received' | 'failed'
 
 interface TransferBatch {
 	status: Status

@@ -16,8 +16,12 @@ declare global {
 				onSessionNotification: (callback: (data: OnNotification) => void) => () => void
 				onStatus: (callback: (data: OnStatus) => void) => () => void
 				onSessionError: (callback: (data: OnError) => void) => () => void
-				onFilesOfferReceived: (callback: (data: OnFilesOfferReceived) => void) => () => void
-				onBatch: (callback: (data: OnBatch) => void) => () => void
+				onFilesPublished: (callback: (data: OnFilesPublished) => void) => () => void
+				onFilesRemoved: (callback: (data: OnFilesRemoved) => void) => () => void
+				onCatalogRequested: (callback: (data: OnCatalogRequested) => void) => () => void
+				onCatalogRefreshing: (callback: (data: OnCatalogRequested) => void) => () => void
+				onLocalFileChanged: (callback: (data: OnLocalFileChanged) => void) => () => void
+				onLocalFilesRemoved: (callback: (data: OnLocalFilesRemoved) => void) => () => void
 				onPeerRequestedData: (callback: (data: OnPeerRequestedData) => void) => () => void
 				onFilesDelivery: (callback: (data: OnFilesDelivery) => void) => () => void
 				onFilesToSend: (callback: (data: OnFilesToSend) => void) => () => void
@@ -26,7 +30,9 @@ declare global {
 				disconnectSession: (params: DisconnectSession) => Promise<void>
 
 				shareFiles: (params: ShareFiles) => Promise<void>
-				acceptFiles: (params: AcceptFiles) => Promise<void>
+				removeFiles: (params: RemoveFiles) => Promise<void>
+				requestCatalog: (params: RequestCatalog) => Promise<void>
+				syncFiles: (params: SyncFiles) => Promise<void>
 				createTunnel: (params: CreateTunnel) => Promise<void>
 			}
 			be: {
@@ -42,44 +48,70 @@ declare global {
 	}
 }
 
-interface OnBatch {
-	repoId: number
-	batchId: string
-	filesIds: string[]
-}
-
 interface OnFilesToSend {
 	batchId: string
 	repoId: number
+	filesIds: string[]
+	receiverId: string
+	receiverName: string
 }
 
 export interface ShareFiles {
 	repoId: string
-	files: { filename: string; id: string }[]
+	files: SharedFile[]
 }
 
-export interface AcceptFiles {
-	batchId: string
+export interface SyncFiles {
+	repoId: string
 	senderId: string
+	filesIds: string[]
+}
+
+export interface RemoveFiles {
+	repoId: string
+	filesIds: string[]
+}
+
+export interface RequestCatalog {
+	repoId: string
 }
 
 export interface CreateTunnel {
 	receiverId: string
+	receiverName: string
 	batchId: string
+	repoId: string
+	filesIds: string[]
 }
 
-interface OnFilesOfferReceived {
-	batchId: string
-	filenames: string[]
+interface OnFilesPublished {
+	repoId: number
+	files: SharedFile[]
 	senderId: string
 	senderName: string
-	repoId: number | null
 }
 
-interface OnPeerRequestedData {
-	batchId: string
-	receiverId: string
+interface OnFilesRemoved {
+	repoId: number
+	senderId: string
+	filesIds?: string[]
 }
+
+interface OnCatalogRequested {
+	repoId: number
+}
+
+interface OnLocalFileChanged {
+	repoId: number
+	file: LocalSecretFile
+}
+
+interface OnLocalFilesRemoved {
+	repoId: number
+	filesIds: string[]
+}
+
+type OnPeerRequestedData = CreateTunnel
 
 interface OnError {
 	message: string
@@ -87,17 +119,29 @@ interface OnError {
 
 interface OnFilesDelivery {
 	batchId: string
-	repoId: number | null
+	repoId: number
+	filesIds: string[]
+	senderId: string
+	senderName: string
+}
+
+interface SharedFile {
+	id: string
+	name: string
+	relativePath: string
+	hash: string
+	size: number
 }
 
 export interface ConnectSession {
 	repoId: string
 	username: string
 	userId: number
+	role: 'owner' | 'collaborator'
 	repositoryName: string
 }
 
-export type DisconnectSession = Omit<ConnectSession, 'userId'>
+export type DisconnectSession = Omit<ConnectSession, 'userId' | 'role'>
 
 interface OnNotification {
 	title: string

@@ -2,7 +2,7 @@ import { Card } from '@renderer/components/Card'
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { GithubRepo } from '@renderer/stores/user/user.types'
 import { Files as FilesType } from '@renderer/stores/sessions/sessions.types'
-import { Send, Trash2 } from 'lucide-react'
+import { RefreshCw, Trash2 } from 'lucide-react'
 import { Files } from './Files'
 import { useState } from 'react'
 import { AddFiles } from './AddFiles'
@@ -10,7 +10,7 @@ import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
 import { useShallow } from 'zustand/shallow'
 import { ErrorFallback } from '@renderer/components/ErrorFallback'
 import { useErrors } from '@renderer/hooks/useErrors'
-import { Tooltip } from '@renderer/components/Tooltip'
+import { toast } from 'sonner'
 
 interface LinkedRepositoryProps {
 	repo: GithubRepo
@@ -28,7 +28,19 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 	const { error, onClose, setInvalidFiles } = useErrors()
 	const currentSession = useCurrentSession(repo.id)!
 	const onDeleteFiles = (files: FilesType[]) => {
+		const localFileIds = files.filter((file) => !file.sourceId).map((file) => file.id)
+		if (localFileIds.length && currentSession.state === 'connected') {
+			window.electron.socket
+				.removeFiles({
+					repoId: repo.id.toString(),
+					filesIds: localFileIds,
+				})
+				.catch((error) =>
+					toast.error('Could not remove shared files', { description: String(error) })
+				)
+		}
 		removeSessionFiles(repo.id, files)
+		setSelectedFiles((selected) => selected.filter((file) => !localFileIds.includes(file.id)))
 	}
 	const handleSelectFiles = async () => {
 		if (!currentSession || !currentSession?.repository) return
@@ -39,13 +51,29 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 		}
 		if (!files.length) return
 		setSessionFiles(repo.id, files)
-	}
-
-	const handleSendFiles = () => {
-		const currentFiles = selectedFiles.length !== 0 ? selectedFiles : currentSession.files
-		const files = currentFiles.map((file) => ({ filename: file.name, id: file.id }))
-		window.electron.socket.shareFiles({ files, repoId: repo.id.toString() })
 		setSelectedFiles([])
+		const sharedFiles = files.map(({ id, name, relativePath, hash, size }) => ({
+			id,
+			name,
+			relativePath,
+			hash,
+			size,
+		}))
+		if (currentSession.state === 'connected') {
+			window.electron.socket
+				.shareFiles({ files: sharedFiles, repoId: repo.id.toString() })
+				.catch((error) =>
+					toast.error('Could not share selected files', { description: String(error) })
+				)
+		}
+	}
+	const handleRefreshFiles = async () => {
+		try {
+			await window.electron.socket.requestCatalog({ repoId: repo.id.toString() })
+			toast.info('Refreshing available files…')
+		} catch (error) {
+			toast.error('Could not refresh available files', { description: String(error) })
+		}
 	}
 
 	return (
@@ -60,29 +88,16 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 					</div>
 
 					<div className="flex items-center justify-center gap-2">
-						{Boolean(currentSession.files.length) && (
-							<Tooltip
-								content="Start a session before sending anything"
-								disabled={currentSession.state === 'connected'}
-								tooltipClassNames="w-64 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600 shadow-lg"
-								position="left"
-								align="center"
-							>
-								<button
-									type="button"
-									className="flex items-center gap-2 rounded-xl border border-sky-600/20 bg-sky-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-sky-600 hover:shadow active:scale-[0.98] disabled:border-zinc-200 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:shadow-none disabled:cursor-not-allowed"
-									disabled={currentSession.state !== 'connected' || !currentSession.files?.length}
-									onClick={handleSendFiles}
-								>
-									<Send size={15} strokeWidth={2.2} />
-									Sync{' '}
-									{selectedFiles.length
-										? `(${selectedFiles.length})`
-										: `(${currentSession.files.length})`}
-								</button>
-							</Tooltip>
-						)}
-
+						<button
+							type="button"
+							onClick={handleRefreshFiles}
+							disabled={currentSession.state !== 'connected'}
+							className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+							title="Ask connected users for their latest files"
+						>
+							<RefreshCw size={15} />
+							Refresh files
+						</button>
 						{Boolean(selectedFiles.length) && (
 							<>
 								<div className="h-5 w-px bg-zinc-200" />
@@ -112,7 +127,17 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 						hoveredFileIds={hoveredFileIds}
 					/>
 				)}
-				<AddFiles onClick={handleSelectFiles} full={currentSession.files.length === 0} />
+				{currentSession.role === 'owner' && (
+					<AddFiles onClick={handleSelectFiles} full={currentSession.files.length === 0} />
+				)}
+				{currentSession.role === 'collaborator' && currentSession.files.length === 0 && (
+					<div className="flex flex-1 items-center justify-center px-8 py-12 text-center">
+						<p className="max-w-sm text-sm text-zinc-500">
+							No files are currently available. Refresh the catalog or wait for the owner to share
+							files.
+						</p>
+					</div>
+				)}
 			</Card>
 		</>
 	)

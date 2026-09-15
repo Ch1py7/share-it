@@ -1,13 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import {
-	AcceptFiles,
 	ConnectSession,
 	CreateTunnel,
 	DisconnectSession,
 	ReceiveFiles,
+	RemoveFiles,
+	RequestCatalog,
 	ReposParams,
 	SendFiles,
 	ShareFiles,
+	SyncFiles,
 } from './index.types'
 import { notifications } from './listeners/notifications'
 import { session } from './listeners/session'
@@ -57,8 +59,11 @@ if (process.contextIsolated) {
 				connectSession: (params: ConnectSession) =>
 					ipcRenderer.invoke('session:connect', { params }),
 				shareFiles: (params: ShareFiles) => ipcRenderer.invoke('session:share-files', { params }),
-				acceptFiles: (params: AcceptFiles) =>
-					ipcRenderer.invoke('session:accept-files', { params }),
+				removeFiles: (params: RemoveFiles) =>
+					ipcRenderer.invoke('session:remove-files', { params }),
+				requestCatalog: (params: RequestCatalog) =>
+					ipcRenderer.invoke('session:request-catalog', { params }),
+				syncFiles: (params: SyncFiles) => ipcRenderer.invoke('session:sync-files', { params }),
 				createTunnel: (params: CreateTunnel) =>
 					ipcRenderer.invoke('session:create-tunnel', { params }),
 			},

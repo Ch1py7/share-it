@@ -1,23 +1,21 @@
 import { io, Socket } from 'socket.io-client'
 import type { BrowserWindow } from 'electron'
 import {
-	AcceptFiles,
 	ClientToServerEvents,
 	ConnectSession,
 	CreateTunnel,
 	DisconnectSession,
+	RemoveFiles,
+	RequestCatalog,
 	ServerToClientEvents,
 	ShareFiles,
+	SyncFiles,
 } from './socket.types'
 
 export class SocketService {
 	private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null
 	private readonly window: BrowserWindow
 	private readonly connectedRepoIds = new Set<number>()
-
-	private getCurrentRepoId(): number | null {
-		return this.connectedRepoIds.size === 1 ? [...this.connectedRepoIds][0] : null
-	}
 
 	constructor(window: BrowserWindow) {
 		this.window = window
@@ -58,15 +56,32 @@ export class SocketService {
 			this.window.webContents.send('status', { ...data, repoId: Number(data.repoId) })
 		})
 
-		this.socket.on('session:files-offer-received', (data) => {
-			this.window.webContents.send('session:files-offer-received', {
+		this.socket.on('session:files-published', (data) => {
+			this.window.webContents.send('session:files-published', {
 				...data,
-				repoId: this.getCurrentRepoId(),
+				repoId: Number(data.repoId),
 			})
 		})
 
-		this.socket.on('session:batch', (data) => {
-			this.window.webContents.send('session:batch', { ...data, repoId: Number(data.repoId) })
+		this.socket.on('session:files-removed', (data) => {
+			this.window.webContents.send('session:files-removed', {
+				...data,
+				repoId: Number(data.repoId),
+			})
+		})
+
+		this.socket.on('session:catalog-requested', (data) => {
+			this.window.webContents.send('session:catalog-requested', {
+				...data,
+				repoId: Number(data.repoId),
+			})
+		})
+
+		this.socket.on('session:catalog-refreshing', (data) => {
+			this.window.webContents.send('session:catalog-refreshing', {
+				...data,
+				repoId: Number(data.repoId),
+			})
 		})
 
 		this.socket.on('session:peer-requested-data', (data) => {
@@ -80,13 +95,13 @@ export class SocketService {
 		this.socket.on('session:files-delivery', (data) => {
 			this.window.webContents.send('session:files-delivery', {
 				...data,
-				repoId: this.getCurrentRepoId(),
+				repoId: Number(data.repoId),
 			})
 		})
 
 		this.socket.on('session:files-to-send', (data) => {
 			this.window.webContents.send('session:files-to-send', {
-				batchId: data.batchId,
+				...data,
 				repoId: Number(data.repoId),
 			})
 		})
@@ -116,8 +131,16 @@ export class SocketService {
 		this.socket?.emit('session:share-files', payload)
 	}
 
-	public acceptFiles(payload: AcceptFiles) {
-		this.socket?.emit('session:accept-files', payload)
+	public removeFiles(payload: RemoveFiles) {
+		this.socket?.emit('session:remove-files', payload)
+	}
+
+	public requestCatalog(payload: RequestCatalog) {
+		this.socket?.emit('session:request-catalog', payload)
+	}
+
+	public syncFiles(payload: SyncFiles) {
+		this.socket?.emit('session:sync-files', payload)
 	}
 
 	public createTunnel(payload: CreateTunnel) {

@@ -5,12 +5,11 @@ import { useShallow } from 'zustand/shallow'
 import { toast } from 'sonner'
 
 export const SocketHandler = () => {
-	const { setSessionState, sessions } = useSessionsStore(
-		useShallow((state) => ({ setSessionState: state.setSessionState, sessions: state.sessions }))
+	const { setSessionState } = useSessionsStore(
+		useShallow((state) => ({ setSessionState: state.setSessionState }))
 	)
 	const addTransfer = useFilesStore((state) => state.addTransfer)
 	const setTransferStatus = useFilesStore((state) => state.setTransferStatus)
-	const transfers = useFilesStore((state) => state.transfers)
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onNotification((notification) => {
@@ -53,58 +52,91 @@ export const SocketHandler = () => {
 	}, [setSessionState])
 
 	useEffect(() => {
-		const unsubscribe = window.electron.socket.onFilesOfferReceived((files) => {
-			if (files.repoId === null || !useSessionsStore.getState().sessions.has(files.repoId)) {
-				toast.error('File offer received without an active repository')
-				return
-			}
-			const repoId = files.repoId
-			addTransfer(
-				repoId,
-				files.batchId,
-				files.filenames.map((filename, index) => ({
-					id: `${files.batchId}_${index}`,
-					name: filename,
-					relativePath: filename,
-					hash: '',
-					size: 0,
-				})),
-				'pending',
-				{ id: files.senderId, name: files.senderName }
+		return window.electron.socket.onFilesPublished((payload) => {
+			const session = useSessionsStore.getState().sessions.get(payload.repoId)
+			if (!session) return
+
+			useSessionsStore.getState().setSessionFiles(
+				payload.repoId,
+				payload.files.map((file) => ({
+					...file,
+					id: `${payload.senderId}:${file.id}`,
+					sourceId: payload.senderId,
+					sourceName: payload.senderName,
+					sourceFileId: file.id,
+				}))
 			)
-
-			toast.info(`${files.senderName} wants to share files`, {
-				description: files.filenames.join(', '),
-				duration: 30000,
-				action: {
-					label: 'Accept',
-					onClick: () => {
-						window.electron.socket
-							.acceptFiles({ batchId: files.batchId, senderId: files.senderId })
-							.catch((error) =>
-								toast.error('Could not accept files', { description: String(error) })
-							)
-					},
-				},
-			})
 		})
-
-		return () => {
-			unsubscribe()
-		}
-	}, [addTransfer])
+	}, [])
 
 	useEffect(() => {
-		const unsubscribe = window.electron.socket.onBatch((files) => {
-			const currentSession = sessions.get(files.repoId)
-			const sessionFiles = currentSession?.files.filter((f) => files.filesIds.includes(f.id)) ?? []
-			addTransfer(files.repoId, files.batchId, sessionFiles, 'sent')
+		return window.electron.socket.onFilesRemoved(({ repoId, senderId, filesIds }) => {
+			const store = useSessionsStore.getState()
+			const session = store.sessions.get(repoId)
+			if (!session) return
+			store.removeSessionFiles(
+				repoId,
+				session.files.filter(
+					(file) =>
+						file.sourceId === senderId && (!filesIds || filesIds.includes(file.sourceFileId ?? ''))
+				)
+			)
 		})
+	}, [])
 
-		return () => {
-			unsubscribe()
-		}
-	}, [addTransfer, sessions])
+	useEffect(() => {
+		return window.electron.socket.onCatalogRequested(({ repoId }) => {
+			const session = useSessionsStore.getState().sessions.get(repoId)
+			if (session?.role !== 'owner') return
+			const files =
+				session?.files
+					.filter((file) => !file.sourceId)
+					.map(({ id, name, relativePath, hash, size }) => ({
+						id,
+						name,
+						relativePath,
+						hash,
+						size,
+					})) ?? []
+			if (files.length) {
+				window.electron.socket.shareFiles({ repoId: repoId.toString(), files }).catch((error) =>
+					toast.error('Could not refresh the shared file catalog', {
+						description: String(error),
+					})
+				)
+			}
+		})
+	}, [])
+
+	useEffect(() => {
+		return window.electron.socket.onCatalogRefreshing(({ repoId }) => {
+			const store = useSessionsStore.getState()
+			const session = store.sessions.get(repoId)
+			if (!session) return
+			store.removeSessionFiles(
+				repoId,
+				session.files.filter((file) => Boolean(file.sourceId))
+			)
+		})
+	}, [])
+
+	useEffect(() => {
+		return window.electron.socket.onLocalFileChanged(({ repoId, file }) => {
+			useSessionsStore.getState().setSessionFiles(repoId, [file])
+		})
+	}, [])
+
+	useEffect(() => {
+		return window.electron.socket.onLocalFilesRemoved(({ repoId, filesIds }) => {
+			const store = useSessionsStore.getState()
+			const session = store.sessions.get(repoId)
+			if (!session) return
+			store.removeSessionFiles(
+				repoId,
+				session.files.filter((file) => !file.sourceId && filesIds.includes(file.id))
+			)
+		})
+	}, [])
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onPeerRequestedData((data) => {
@@ -119,50 +151,56 @@ export const SocketHandler = () => {
 	}, [])
 
 	useEffect(() => {
-		return window.electron.socket.onFilesDelivery(async ({ batchId, repoId }) => {
-			if (repoId === null) {
-				toast.error('Could not identify the destination repository')
-				return
-			}
-
+		return window.electron.socket.onFilesDelivery(async (delivery) => {
+			const { batchId, repoId, senderId, senderName, filesIds } = delivery
+			const session = useSessionsStore.getState().sessions.get(repoId)
+			const receivedFiles =
+				session?.files.filter(
+					(file) => file.sourceId === senderId && filesIds.includes(file.sourceFileId ?? '')
+				) ?? []
+			addTransfer(repoId, batchId, receivedFiles, 'receiving', {
+				id: senderId,
+				name: senderName,
+			})
 			try {
-				console.log(batchId)
-				console.log(repoId)
 				await window.electron.be.receiveFiles({ batchId, repoId })
 				setTransferStatus(repoId, batchId, 'received')
 				toast.success('Files received')
 			} catch (error) {
+				setTransferStatus(repoId, batchId, 'failed')
 				toast.error('Could not receive files', { description: String(error) })
 			}
 		})
-	}, [setTransferStatus])
+	}, [addTransfer, setTransferStatus])
 
 	useEffect(() => {
-		const unsubscribe = window.electron.socket.onFilesToSend((file) => {
-			const currentTransfer = transfers.get(file.repoId)
-			const currentBatch = currentTransfer?.get(file.batchId)
-			if (!currentBatch) return
-
-			const filePaths = currentBatch.files.map((f) => f.relativePath)
-			console.log({
-				batchId: file.batchId,
-				filePaths,
-				repoId: file.repoId,
+		const unsubscribe = window.electron.socket.onFilesToSend((transfer) => {
+			const session = useSessionsStore.getState().sessions.get(transfer.repoId)
+			const files =
+				session?.files.filter((file) => !file.sourceId && transfer.filesIds.includes(file.id)) ?? []
+			if (!files.length) return
+			addTransfer(transfer.repoId, transfer.batchId, files, 'synchronizing', {
+				id: transfer.receiverId,
+				name: transfer.receiverName,
 			})
 
 			window.electron.be
 				.sendFiles({
-					batchId: file.batchId,
-					filePaths,
-					repoId: file.repoId,
+					batchId: transfer.batchId,
+					filePaths: files.map((file) => file.relativePath),
+					repoId: transfer.repoId,
 				})
-				.catch((error) => toast.error('Could not send files', { description: String(error) }))
+				.then(() => setTransferStatus(transfer.repoId, transfer.batchId, 'sent'))
+				.catch((error) => {
+					setTransferStatus(transfer.repoId, transfer.batchId, 'failed')
+					toast.error('Could not send files', { description: String(error) })
+				})
 		})
 
 		return () => {
 			unsubscribe()
 		}
-	}, [sessions, transfers])
+	}, [addTransfer, setTransferStatus])
 
 	return null
 }

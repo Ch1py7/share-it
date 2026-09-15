@@ -2,9 +2,17 @@ import { Card } from '@renderer/components/Card'
 import { Tooltip } from '@renderer/components/Tooltip'
 import { formatFileSize } from '@renderer/lib/utils'
 import { useFilesStore } from '@renderer/stores/files/files.store'
-import { CheckCircle2, Clock3, ClockFading, FileCode2, History, Send } from 'lucide-react'
+import {
+	CheckCircle2,
+	CircleX,
+	ClockFading,
+	Download,
+	FileCode2,
+	History,
+	LoaderCircle,
+	Send,
+} from 'lucide-react'
 import { useMemo } from 'react'
-import { toast } from 'sonner'
 
 interface TransferHistoryProps {
 	repoId: number
@@ -12,28 +20,44 @@ interface TransferHistoryProps {
 }
 
 const transferStatus = {
+	synchronizing: {
+		icon: LoaderCircle,
+		label: 'Synchronizing',
+		tooltip: 'The selected files are being sent',
+		className: 'bg-amber-50 text-amber-700',
+		description: 'Files are being synchronized by another user',
+		iconClassName: 'bg-amber-50 text-amber-600',
+	},
+	receiving: {
+		icon: Download,
+		label: 'Receiving',
+		tooltip: 'The selected files are still being received',
+		className: 'bg-violet-50 text-violet-700',
+		description: 'Files are being received from another user',
+		iconClassName: 'bg-violet-50 text-violet-600',
+	},
+	failed: {
+		icon: CircleX,
+		label: 'Failed',
+		tooltip: 'The synchronization could not be completed',
+		className: 'bg-red-50 text-red-700',
+		description: 'The synchronization failed',
+		iconClassName: 'bg-red-50 text-red-600',
+	},
 	sent: {
 		icon: Send,
 		label: 'Sent',
 		tooltip: '',
 		className: 'bg-sky-50 text-sky-700',
-		description: 'You sent this synchronization batch',
+		description: 'Files synchronized by another user',
 		iconClassName: 'bg-sky-50 text-sky-600',
-	},
-	pending: {
-		icon: Clock3,
-		label: 'Pending',
-		tooltip: 'This synchronization is waiting to be accepted on this device',
-		className: 'bg-amber-50 text-amber-700',
-		description: 'This batch is waiting to be accepted and synchronized on this device',
-		iconClassName: 'bg-amber-50 text-amber-600',
 	},
 	received: {
 		icon: CheckCircle2,
 		label: 'Received',
 		tooltip: '',
 		className: 'bg-emerald-50 text-emerald-700',
-		description: 'This synchronization batch has been received on this device',
+		description: 'You synchronized files from another user',
 		iconClassName: 'bg-emerald-50 text-emerald-600',
 	},
 } as const
@@ -47,15 +71,6 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 		return [...currentTransfers.entries()].reverse()
 	}, [currentTransfers])
 
-	const acceptBatch = async (batchId: string, senderId: string) => {
-		try {
-			await window.electron.socket.acceptFiles({ batchId, senderId })
-			toast.info('Transfer accepted. Waiting for files…')
-		} catch (error) {
-			toast.error('Could not accept files', { description: String(error) })
-		}
-	}
-
 	return (
 		<Card className="flex min-w-sm flex-col overflow-hidden">
 			<div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4">
@@ -67,7 +82,7 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 					<div>
 						<h2 className="text-sm font-semibold text-zinc-900">Transfer history</h2>
 
-						<p className="text-xs text-zinc-500">Recent synchronization batches</p>
+						<p className="text-xs text-zinc-500">Who synchronized which files</p>
 					</div>
 				</div>
 
@@ -112,6 +127,9 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 													</div>
 
 													<p className="mt-0.5 text-xs text-zinc-500">
+														{batch.senderName
+															? `${batch.status === 'sent' ? 'Synchronized by' : 'From'} ${batch.senderName} · `
+															: ''}
 														{new Date(batch.createdAt).toLocaleString()}
 													</p>
 												</div>
@@ -139,15 +157,6 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 										</div>
 
 										<div className="mt-4 space-y-1.5 pl-9">
-											{batch.status === 'pending' && batch.senderId && (
-												<button
-													type="button"
-													onClick={() => acceptBatch(id, batch.senderId!)}
-													className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700"
-												>
-													Accept batch{batch.senderName ? ` from ${batch.senderName}` : ''}
-												</button>
-											)}
 											{batch.files.map((file) => (
 												<div
 													key={file.id}
@@ -180,7 +189,7 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 					<p className="mt-4 text-sm font-medium text-zinc-800">No transfers yet</p>
 
 					<p className="mt-1 max-w-56 text-xs leading-5 text-zinc-500">
-						Your synchronization history will appear here after sending your first batch.
+						Synchronization activity will appear here after a file is downloaded.
 					</p>
 				</div>
 			)}

@@ -22,6 +22,9 @@ export interface Files {
 	relativePath: string
 	hash: string
 	size: number
+	sourceId?: string
+	sourceName?: string
+	sourceFileId?: string
 }
 
 export type States = 'disconnected' | 'error' | 'connected' | 'loading' | 'pending'

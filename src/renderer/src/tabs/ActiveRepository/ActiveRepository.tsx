@@ -51,6 +51,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 			userId: user.githubId,
 			username: user.githubUsername,
 			repositoryName: repo.name,
+			role: currentSession?.role ?? 'collaborator',
 		})
 	}
 
