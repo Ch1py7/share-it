@@ -36,7 +36,7 @@ export const Layout = () => {
 	)
 
 	const handleSelectRepository = (repo: GithubRepo) => {
-		setSelectedRepo(repo)
+		setSelectedRepo({ ...repo, clone_url: repo.clone_url.replace('.git', '') })
 		if (sessionIds.has(repo.id)) return
 		setIsOpen(true)
 	}

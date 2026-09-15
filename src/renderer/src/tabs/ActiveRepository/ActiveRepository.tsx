@@ -1,6 +1,6 @@
 import { GithubRepo } from '@renderer/stores/user/user.types'
 import { useErrors } from '@renderer/hooks/useErrors'
-import { ArrowLeft, Ban, Rocket, Trash2 } from 'lucide-react'
+import { ArrowLeft, Ban, Link, Rocket, Trash2 } from 'lucide-react'
 import { States } from '@renderer/stores/sessions/sessions.types'
 import { Tooltip } from '@renderer/components/Tooltip'
 import { SessionStateHelper } from '@renderer/components/tooltips/SessionStateHelper'
@@ -97,8 +97,8 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 							className="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-1 text-sm font-medium text-white shadow-sm transition-all hover:bg-violet-700 hover:shadow-md"
 							onClick={handleConnectSession}
 						>
-							<Rocket size={16} />
-							Create Session
+							{currentSession?.role === 'owner' ? <Rocket size={16} /> : <Link size={16} />}
+							{currentSession?.role === 'owner' ? 'Create Session' : 'Join Session'}
 						</button>
 					)}
 					{sessionState === 'connected' && (

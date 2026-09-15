@@ -142,7 +142,7 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 											{batch.status === 'pending' && batch.senderId && (
 												<button
 													type="button"
-													onClick={() => void acceptBatch(id, batch.senderId!)}
+													onClick={() => acceptBatch(id, batch.senderId!)}
 													className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-sky-700"
 												>
 													Accept batch{batch.senderName ? ` from ${batch.senderName}` : ''}

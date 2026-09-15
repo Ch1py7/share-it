@@ -49,6 +49,9 @@ export const Login = () => {
 
 	useEffect(() => {
 		const unsubscribe = window.electron.onGithubCallback(async (url) => {
+			if (!loginState.current || new URL(url).searchParams.get('state') !== loginState.current) {
+				return
+			}
 			try {
 				const code = github.waitForCallback({ url, loginState: loginState.current ?? '' })
 				const auth = await window.electron.be.auth(code, codeVerifier.current!)

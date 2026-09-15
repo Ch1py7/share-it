@@ -79,7 +79,7 @@ export const SocketHandler = () => {
 				action: {
 					label: 'Accept',
 					onClick: () => {
-						void window.electron.socket
+						window.electron.socket
 							.acceptFiles({ batchId: files.batchId, senderId: files.senderId })
 							.catch((error) =>
 								toast.error('Could not accept files', { description: String(error) })
@@ -108,7 +108,7 @@ export const SocketHandler = () => {
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onPeerRequestedData((data) => {
-			void window.electron.socket
+			window.electron.socket
 				.createTunnel(data)
 				.catch((error) => toast.error('Could not create transfer', { description: String(error) }))
 		})
@@ -126,6 +126,8 @@ export const SocketHandler = () => {
 			}
 
 			try {
+				console.log(batchId)
+				console.log(repoId)
 				await window.electron.be.receiveFiles({ batchId, repoId })
 				setTransferStatus(repoId, batchId, 'received')
 				toast.success('Files received')
@@ -142,8 +144,13 @@ export const SocketHandler = () => {
 			if (!currentBatch) return
 
 			const filePaths = currentBatch.files.map((f) => f.relativePath)
+			console.log({
+				batchId: file.batchId,
+				filePaths,
+				repoId: file.repoId,
+			})
 
-			void window.electron.be
+			window.electron.be
 				.sendFiles({
 					batchId: file.batchId,
 					filePaths,

@@ -176,7 +176,7 @@ export class BackendService {
 		}
 	}
 
-	public async sendFiles({ batchId, filePaths }: SendFiles): Promise<{
+	public async sendFiles({ batchId, filePaths, repositoryPath }: SendFiles): Promise<{
 		success: boolean
 	}> {
 		const streamBridge = new PassThrough()
@@ -184,23 +184,42 @@ export class BackendService {
 
 		archive.pipe(streamBridge)
 
+		for (const filePath of filePaths) {
+			if (!fs.existsSync(filePath)) continue
+			const relativePath = path.relative(repositoryPath, filePath)
+
+			if (
+				!relativePath ||
+				path.isAbsolute(relativePath) ||
+				relativePath === '..' ||
+				relativePath.startsWith(`..${path.sep}`)
+			) {
+				throw new Error('Cannot send a file outside the repository')
+			}
+
+			archive.file(filePath, {
+				// ZIP entry names always use forward slashes, including on Windows.
+				name: relativePath.split(path.sep).join('/'),
+			})
+		}
+
 		const request = api.post(`/stream-bridge/${batchId}/transmitter`, streamBridge, {
 			headers: {
 				'Content-Type': 'application/zip',
 			},
 		})
 
-		for (const filePath of filePaths) {
-			if (!fs.existsSync(filePath)) continue
-
-			archive.file(filePath, {
-				name: path.basename(filePath),
-			})
-		}
-
 		await archive.finalize()
 
-		await request
+		const response = await request
+		if (response.status < 200 || response.status >= 300) {
+			throw new Error(
+				`Could not send files: server returned ${response.status}${
+					typeof response.data === 'string' ? ` (${response.data})` : ''
+				}`
+			)
+		}
+
 		return { success: true }
 	}
 
@@ -210,6 +229,22 @@ export class BackendService {
 		const response = await api.get(`/stream-bridge/${batchId}/receiver`, {
 			responseType: 'stream',
 		})
+		const contentType = String(response.headers['content-type'] ?? '').toLowerCase()
+
+		if (response.status < 200 || response.status >= 300) {
+			response.data.resume()
+			throw new Error(`Could not receive files: server returned ${response.status}`)
+		}
+
+		if (
+			!contentType.includes('application/zip') &&
+			!contentType.includes('application/octet-stream')
+		) {
+			response.data.resume()
+			throw new Error(
+				`Could not receive files: expected a ZIP stream, received ${contentType || 'an unknown content type'}`
+			)
+		}
 
 		const extract = unzipper.Extract({
 			path: repositoryPath,
@@ -230,6 +265,7 @@ export class BackendService {
 
 interface SendFiles {
 	filePaths: string[]
+	repositoryPath: string
 	batchId: string
 }
 

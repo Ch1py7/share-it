@@ -7,6 +7,7 @@ import { BackendService } from './backend.service'
 import { access, readFile, realpath } from 'node:fs/promises'
 import { simpleGit } from 'simple-git'
 import { createHash } from 'node:crypto'
+import { createConnection, createServer } from 'node:net'
 import { SocketService } from './services/socket.service'
 import { AuthorizedRepositories, isBatchId, isGithubLoginUrl, isWithinDirectory } from './security'
 
@@ -22,6 +23,22 @@ const devProfile =
 		: undefined
 if (devProfile) {
 	app.setPath('userData', join(app.getPath('appData'), `share-it-dev-${devProfile}`))
+}
+
+const oauthPipe = (profile: 'primary' | 'peer') =>
+	`\\\\.\\pipe\\share-it-oauth-${createHash('sha256').update(process.cwd()).digest('hex').slice(0, 12)}-${profile}`
+
+const deliverOAuthCallback = (url: string) => {
+	if (!url.startsWith('myapp://')) return
+	mainWindow?.webContents.send('be:callback', url)
+
+	if (!app.isPackaged) {
+		const otherProfile = devProfile === 'peer' ? 'primary' : 'peer'
+		const connection = createConnection(oauthPipe(otherProfile), () => connection.end(url))
+		connection.on('error', () => {
+			// The other development instance is not running.
+		})
+	}
 }
 
 const requireTrustedSender = (event: IpcMainInvokeEvent) => {
@@ -53,9 +70,7 @@ if (!gotLock) {
 
 app.on('second-instance', (_, commandLine) => {
 	const url = commandLine.find((arg) => arg.startsWith('myapp://'))
-	if (url && mainWindow) {
-		mainWindow.webContents.send('be:callback', url)
-	}
+	if (url) deliverOAuthCallback(url)
 })
 
 function createWindow(): void {
@@ -116,11 +131,12 @@ handleTrusted('be:logout', async () => {
 
 handleTrusted('be:send-files', async (_, { params }) => {
 	if (!params || !isBatchId(params.batchId)) throw new Error('Invalid batch')
+	const repositoryPath = authorizedRepositories.requireRoot(params.repoId)
 	const filePaths = await authorizedRepositories.requireSelectedFiles(
 		params.repoId,
 		params.filePaths
 	)
-	return backend.sendFiles({ batchId: params.batchId, filePaths })
+	return backend.sendFiles({ batchId: params.batchId, filePaths, repositoryPath })
 })
 handleTrusted('be:receive-files', async (_, { params }) => {
 	if (!params || !isBatchId(params.batchId)) throw new Error('Invalid batch')
@@ -217,7 +233,7 @@ handleTrusted('select-files', async (_, repoId: number) => {
 app.whenReady().then(() => {
 	electronApp.setAppUserModelId('com.electron')
 	if (is.dev) {
-		app.setAsDefaultProtocolClient('myapp', process.execPath, [process.cwd()])
+		if (!devProfile) app.setAsDefaultProtocolClient('myapp', process.execPath, [process.cwd()])
 	} else {
 		app.setAsDefaultProtocolClient('myapp')
 	}
@@ -227,6 +243,25 @@ app.whenReady().then(() => {
 	})
 
 	createWindow()
+	if (is.dev) {
+		const profile = devProfile === 'peer' ? 'peer' : 'primary'
+		const server = createServer((connection) => {
+			let callback = ''
+			connection.setEncoding('utf8')
+			connection.on('data', (chunk) => {
+				callback += chunk
+				if (callback.length > 8192) connection.destroy()
+			})
+			connection.on('end', () => {
+				if (callback.length <= 8192 && callback.startsWith('myapp://')) {
+					mainWindow?.webContents.send('be:callback', callback)
+				}
+			})
+		})
+		server.on('error', (error) => console.error('OAuth relay unavailable:', error))
+		server.listen(oauthPipe(profile))
+		app.on('before-quit', () => server.close())
+	}
 
 	app.on('activate', () => {
 		if (BrowserWindow.getAllWindows().length === 0) {
@@ -243,6 +278,5 @@ app.on('window-all-closed', () => {
 
 app.on('open-url', (event, url) => {
 	event.preventDefault()
-
-	console.log('OAuth callback:', url)
+	deliverOAuthCallback(url)
 })
