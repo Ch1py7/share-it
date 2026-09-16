@@ -17,7 +17,8 @@ import { session } from './listeners/session'
 if (process.contextIsolated) {
 	try {
 		contextBridge.exposeInMainWorld('electron', {
-			openExternal: (url: string) => ipcRenderer.invoke('be:open-login', url),
+			login: (url: string) => ipcRenderer.invoke('be:open-login', url),
+			openExternal: (url: string) => ipcRenderer.invoke('be:open-external', url),
 
 			onGithubCallback: (callback: (url: string) => void) => {
 				ipcRenderer.on('be:callback', (_, url) => callback(url))
@@ -90,6 +91,6 @@ if (process.contextIsolated) {
 } else {
 	// @ts-expect-error
 	window.electron = {
-		openExternal: (url: string) => ipcRenderer.invoke('be:open-login', url),
+		login: (url: string) => ipcRenderer.invoke('be:open-login', url),
 	}
 }

@@ -4,11 +4,11 @@ import { GithubRepo } from '@renderer/stores/user/user.types'
 import { useHasSession } from '@renderer/hooks/sessions/useHasSession'
 import { Header } from './Header'
 import { ActiveRepository } from '@renderer/tabs/ActiveRepository/ActiveRepository'
-import { Repositories } from '@renderer/tabs/Dashboard/Dashboard'
 import { useUserStore } from '@renderer/stores/user/user.store'
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { CreateSessionModal } from './CreateSessionsModal'
 import { cn } from '@renderer/lib/utils'
+import { RepositoryCard } from '@renderer/tabs/Repositories/RepositoryCard'
 
 export const Layout = () => {
 	const page: Pages = 'repositories'
@@ -23,14 +23,12 @@ export const Layout = () => {
 		setIsOpen(false)
 	}
 
-	const sortedRepos = useMemo(
-		() =>
-			repos?.toSorted((a, b) => {
-				const aActive = sessionIds.has(a.id)
-				const bActive = sessionIds.has(b.id)
-
-				return Number(bActive) - Number(aActive)
-			}) ?? [],
+	const sessionRepos = useMemo(
+		() => repos?.filter((repo) => sessionIds.has(repo.id)) ?? [],
+		[repos, sessionIds]
+	)
+	const availableRepos = useMemo(
+		() => repos?.filter((repo) => !sessionIds.has(repo.id)) ?? [],
 		[repos, sessionIds]
 	)
 
@@ -55,7 +53,37 @@ export const Layout = () => {
 							(isSelectedActiveRepo && selectedRepo ? (
 								<ActiveRepository repo={selectedRepo} onBack={onCancel} />
 							) : (
-								<Repositories repos={sortedRepos} onClick={handleSelectRepository} />
+								<div className="space-y-6 px-6 py-4">
+									{sessionRepos.length > 0 && (
+										<section>
+											<h2 className="mb-3 text-sm font-semibold text-zinc-900">Sessions</h2>
+											<div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+												{sessionRepos.map((repo) => (
+													<RepositoryCard
+														key={repo.id}
+														repo={repo}
+														onClick={handleSelectRepository}
+													/>
+												))}
+											</div>
+										</section>
+									)}
+
+									<section>
+										{sessionRepos.length > 0 && (
+											<h2 className="mb-3 text-sm font-semibold text-zinc-900">Repositories</h2>
+										)}
+										<div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+											{availableRepos.map((repo) => (
+												<RepositoryCard
+													key={repo.id}
+													repo={repo}
+													onClick={handleSelectRepository}
+												/>
+											))}
+										</div>
+									</section>
+								</div>
 							))}
 					</div>
 				</div>

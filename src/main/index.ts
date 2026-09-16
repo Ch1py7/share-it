@@ -188,6 +188,8 @@ handleTrusted('be:open-login', (_, url: unknown) => {
 	return shell.openExternal(url)
 })
 
+handleTrusted('be:open-external', (_, url: string) => shell.openExternal(url))
+
 const backend = new BackendService()
 
 handleTrusted(

@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 interface UserState {
 	accessToken: string | null
 	user: User | null
-	repos: GithubRepo[] | null
+	repos: GithubRepo[]
 	loading: boolean
 	logout: () => Promise<void>
 	setUser: (user: User | null) => void
@@ -18,7 +18,7 @@ interface UserState {
 export const useUserStore = create<UserState>()((set) => ({
 	accessToken: null,
 	user: null,
-	repos: null,
+	repos: [],
 	loading: true,
 	logout: async () => {
 		try {

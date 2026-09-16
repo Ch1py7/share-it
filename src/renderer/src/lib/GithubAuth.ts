@@ -28,7 +28,7 @@ export class GithubAuth {
 		url.searchParams.set('code_challenge', this.codeChallenge)
 		url.searchParams.set('code_challenge_method', 'S256')
 
-		await window.electron.openExternal(url.toString())
+		await window.electron.login(url.toString())
 	}
 
 	public waitForCallback({ url, loginState }: { url: string; loginState: string }) {

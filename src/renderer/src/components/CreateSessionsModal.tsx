@@ -71,20 +71,20 @@ export const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 				</div>
 
 				<div className="grid grid-cols-2 gap-6">
-					<button type="button" onClick={() => onClick(selectedRepo.id, 'collaborator')}>
-						<RoleCard
-							title="Collaborator"
-							description="Access repositories shared with you and synchronize files."
-							icon={<User />}
-							iconStyle="bg-sky-100 text-sky-700"
-						/>
-					</button>
 					<button type="button" onClick={() => onClick(selectedRepo.id, 'owner')}>
 						<RoleCard
 							title="Repository Owner"
 							description="Share repositories, invite collaborators and manage permissions."
 							icon={<CrownIcon />}
 							iconStyle="bg-violet-100 text-violet-700"
+						/>
+					</button>
+					<button type="button" onClick={() => onClick(selectedRepo.id, 'collaborator')}>
+						<RoleCard
+							title="Collaborator"
+							description="Access repositories shared with you and synchronize files."
+							icon={<User />}
+							iconStyle="bg-sky-100 text-sky-700"
 						/>
 					</button>
 				</div>

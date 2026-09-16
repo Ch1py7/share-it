@@ -3,6 +3,7 @@
 declare global {
 	interface Window {
 		electron: {
+			login(url: string): Promise<void>
 			openExternal(url: string): Promise<void>
 			onGithubCallback: (callback: (url: string) => void) => void
 			selectFolder: (repoId: number) => Promise<LocalFolder | null>
