@@ -49,7 +49,7 @@ export const Layout = () => {
 	const isSelectedActiveRepo = useHasSession(selectedRepo?.id)
 
 	useEffect(() => {
-		if (user && repos.length === 0) void fetchRepos(true)
+		if (user && repos.length === 0) fetchRepos(true)
 	}, [fetchRepos, repos.length, user])
 
 	useEffect(() => {
@@ -59,7 +59,7 @@ export const Layout = () => {
 
 		const observer = new IntersectionObserver(
 			([entry]) => {
-				if (entry.isIntersecting) void fetchRepos()
+				if (entry.isIntersecting) fetchRepos()
 			},
 			{ root, rootMargin: '300px' }
 		)
