@@ -163,7 +163,17 @@ export const SocketHandler = () => {
 				name: senderName,
 			})
 			try {
-				await window.electron.be.receiveFiles({ batchId, repoId })
+				await window.electron.be.receiveFiles({
+					batchId,
+					repoId,
+					requestedFileIds: filesIds,
+					expectedFiles: receivedFiles.map(({ sourceFileId, relativePath, hash, size }) => ({
+						id: sourceFileId!,
+						relativePath,
+						hash,
+						size,
+					})),
+				})
 				setTransferStatus(repoId, batchId, 'received')
 				toast.success('Files received')
 			} catch (error) {

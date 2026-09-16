@@ -6,9 +6,9 @@ import fs from 'node:fs'
 import { PassThrough } from 'node:stream'
 import { ZipArchive } from 'archiver'
 import path from 'node:path'
-import unzipper from 'unzipper'
 import axios from 'axios'
 import { app } from 'electron'
+import { extractVerifiedArchive } from './utils/receive-files'
 
 const requestError = (error: unknown) => {
 	if (axios.isAxiosError(error)) {
@@ -223,7 +223,12 @@ export class BackendService {
 		return { success: true }
 	}
 
-	public async receiveFiles({ batchId, repositoryPath }: ReceiveFiles): Promise<{
+	public async receiveFiles({
+		batchId,
+		repositoryPath,
+		requestedFileIds,
+		expectedFiles,
+	}: ReceiveFiles): Promise<{
 		success: boolean
 	}> {
 		const response = await api.get(`/stream-bridge/${batchId}/receiver`, {
@@ -246,20 +251,13 @@ export class BackendService {
 			)
 		}
 
-		const extract = unzipper.Extract({
-			path: repositoryPath,
+		await extractVerifiedArchive({
+			stream: response.data,
+			repositoryPath,
+			requestedFileIds,
+			expectedFiles,
 		})
-
-		return new Promise((resolve, reject) => {
-			response.data
-				.pipe(extract)
-				.on('close', () => {
-					resolve({ success: true })
-				})
-				.on('error', reject)
-
-			response.data.on('error', reject)
-		})
+		return { success: true }
 	}
 }
 
@@ -272,6 +270,8 @@ interface SendFiles {
 interface ReceiveFiles {
 	repositoryPath: string
 	batchId: string
+	requestedFileIds: unknown
+	expectedFiles: unknown
 }
 
 interface Params {

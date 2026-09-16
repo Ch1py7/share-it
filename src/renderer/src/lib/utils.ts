@@ -39,16 +39,21 @@ export const mergeFiles = (current: Files[], incoming: Files[]): Files[] => {
 	return [...files.values()]
 }
 
-export const formatFileSize = (sizeInKb: number): string => {
-	if (sizeInKb >= 1_000_000) {
-		const gb = sizeInKb / 1_000_000
+export const formatFileSize = (sizeInBytes: number): string => {
+	if (sizeInBytes >= 1_000_000_000) {
+		const gb = sizeInBytes / 1_000_000_000
 		return `${gb.toLocaleString('en-US', { maximumFractionDigits: 2 })} GB`
 	}
 
-	if (sizeInKb >= 1_000) {
-		const mb = sizeInKb / 1_000
+	if (sizeInBytes >= 1_000_000) {
+		const mb = sizeInBytes / 1_000_000
 		return `${mb.toLocaleString('en-US', { maximumFractionDigits: 2 })} MB`
 	}
 
-	return `${sizeInKb.toLocaleString('en-US')} KB`
+	if (sizeInBytes >= 1_000) {
+		const kb = sizeInBytes / 1_000
+		return `${kb.toLocaleString('en-US', { maximumFractionDigits: 2 })} KB`
+	}
+
+	return `${sizeInBytes.toLocaleString('en-US')} B`
 }

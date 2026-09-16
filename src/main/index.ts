@@ -10,7 +10,14 @@ import { simpleGit } from 'simple-git'
 import { createHash } from 'node:crypto'
 import { createConnection, createServer } from 'node:net'
 import { SocketService } from './services/socket.service'
-import { AuthorizedRepositories, isBatchId, isGithubLoginUrl, isWithinDirectory } from './security'
+import {
+	AuthorizedRepositories,
+	isAllowedExternalUrl,
+	isBatchId,
+	isGithubCallbackUrl,
+	isGithubLoginUrl,
+	isWithinDirectory,
+} from './security'
 
 let mainWindow: BrowserWindow | null = null
 let socketService: SocketService | null = null
@@ -109,7 +116,7 @@ const oauthPipe = (profile: 'primary' | 'peer') =>
 	`\\\\.\\pipe\\share-it-oauth-${createHash('sha256').update(process.cwd()).digest('hex').slice(0, 12)}-${profile}`
 
 const deliverOAuthCallback = (url: string) => {
-	if (!url.startsWith('myapp://')) return
+	if (!isGithubCallbackUrl(url)) return
 	mainWindow?.webContents.send('be:callback', url)
 
 	if (!app.isPackaged) {
@@ -188,7 +195,10 @@ handleTrusted('be:open-login', (_, url: unknown) => {
 	return shell.openExternal(url)
 })
 
-handleTrusted('be:open-external', (_, url: string) => shell.openExternal(url))
+handleTrusted('be:open-external', (_, url: unknown) => {
+	if (!isAllowedExternalUrl(url)) throw new Error('External URL is not allowed')
+	return shell.openExternal(url)
+})
 
 const backend = new BackendService()
 
@@ -228,7 +238,12 @@ handleTrusted('be:receive-files', async (_, { params }) => {
 		watchedRepository.timers.clear()
 	}
 	try {
-		return await backend.receiveFiles({ batchId: params.batchId, repositoryPath })
+		return await backend.receiveFiles({
+			batchId: params.batchId,
+			repositoryPath,
+			requestedFileIds: params.requestedFileIds,
+			expectedFiles: params.expectedFiles,
+		})
 	} finally {
 		setTimeout(() => {
 			if (watchedRepository) watchedRepository.suppressChanges = false
@@ -351,7 +366,7 @@ app.whenReady().then(() => {
 				if (callback.length > 8192) connection.destroy()
 			})
 			connection.on('end', () => {
-				if (callback.length <= 8192 && callback.startsWith('myapp://')) {
+				if (callback.length <= 8192 && isGithubCallbackUrl(callback)) {
 					mainWindow?.webContents.send('be:callback', callback)
 				}
 			})

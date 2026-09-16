@@ -25,6 +25,40 @@ export const isGithubLoginUrl = (value: unknown): value is string => {
 	}
 }
 
+const allowedExternalHosts = new Set(['github.com'])
+
+export const isAllowedExternalUrl = (value: unknown): value is string => {
+	if (typeof value !== 'string') return false
+	try {
+		const url = new URL(value)
+		return (
+			url.protocol === 'https:' &&
+			allowedExternalHosts.has(url.hostname) &&
+			url.port === '' &&
+			url.username === '' &&
+			url.password === ''
+		)
+	} catch {
+		return false
+	}
+}
+
+export const isGithubCallbackUrl = (value: unknown): value is string => {
+	if (typeof value !== 'string') return false
+	try {
+		const url = new URL(value)
+		return (
+			url.protocol === 'myapp:' &&
+			url.hostname === 'oauth' &&
+			(url.pathname === '' || url.pathname === '/') &&
+			url.username === '' &&
+			url.password === ''
+		)
+	} catch {
+		return false
+	}
+}
+
 export const isBatchId = (value: unknown): value is string =>
 	typeof value === 'string' && validBatchId.test(value)
 

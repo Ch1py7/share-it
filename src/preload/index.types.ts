@@ -218,6 +218,13 @@ export interface SendFiles {
 export interface ReceiveFiles {
 	repoId: number
 	batchId: string
+	requestedFileIds: string[]
+	expectedFiles: Array<{
+		id: string
+		relativePath: string
+		hash: string
+		size: number
+	}>
 }
 
 export interface ReposParams {
