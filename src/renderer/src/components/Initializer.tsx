@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 
 export const Initializer = () => {
 	const setUser = useUserStore((state) => state.setUser)
-	const setRepos = useUserStore((state) => state.setRepos)
 	const setLoading = useUserStore((state) => state.setLoading)
 	const clear = useUserStore((state) => state.clear)
 	const checkToken = useCallback(async () => {
@@ -29,22 +28,11 @@ export const Initializer = () => {
 		setUser(response.data)
 	}, [])
 
-	const checkRepos = useCallback(async () => {
-		const response = await window.electron.be.getRepos()
-		if (!response.success) {
-			setRepos([])
-			toast.error('Could not load repositories', { description: response.error.message })
-			return
-		}
-		setRepos(response.data)
-	}, [])
-
 	useEffect(() => {
 		const checkSession = async () => {
 			try {
 				if (await checkToken()) {
 					await checkUser()
-					if (useUserStore.getState().user) await checkRepos()
 				}
 			} catch {
 				toast.error('Could not initialize the app', { description: 'Please try again' })
@@ -54,7 +42,7 @@ export const Initializer = () => {
 		}
 
 		checkSession()
-	}, [checkToken, checkUser, checkRepos])
+	}, [checkToken, checkUser])
 
 	return null
 }

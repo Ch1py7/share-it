@@ -7,10 +7,9 @@ import { useShallow } from 'zustand/shallow'
 import { toast } from 'sonner'
 
 export const Login = () => {
-	const { setUser, setRepos, setAccessToken } = useUserStore(
+	const { setUser, setAccessToken } = useUserStore(
 		useShallow((state) => ({
 			setUser: state.setUser,
-			setRepos: state.setRepos,
 			setAccessToken: state.setAccessToken,
 		}))
 	)
@@ -62,12 +61,6 @@ export const Login = () => {
 				} else {
 					toast.error('Sign in failed', { description: auth.error.message })
 					return
-				}
-				const repos = await window.electron.be.getRepos()
-				if (repos.success) {
-					setRepos(repos.data)
-				} else {
-					toast.error('Could not load repositories', { description: repos.error.message })
 				}
 			} catch (error) {
 				toast.error('Sign in failed', {
