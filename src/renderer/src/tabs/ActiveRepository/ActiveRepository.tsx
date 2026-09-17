@@ -13,6 +13,7 @@ import { UnlinkedRepository } from './UnlinkedRepository'
 import { LinkedRepository } from './LinkedRepository'
 import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
 import { TransferHistory } from './TransferHistory'
+import { SharingPermissions } from './SharingPermissions'
 import { useState } from 'react'
 
 interface ActiveRepositoryProps {
@@ -22,6 +23,7 @@ interface ActiveRepositoryProps {
 
 export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack }) => {
 	const [hoveredFileIds, setHoveredFileIds] = useState<Set<string>>(new Set())
+	const [activeTab, setActiveTab] = useState<'files' | 'permissions'>('files')
 	const removeSession = useSessionsStore((state) => state.removeSession)
 	const user = useUserStore((state) => state.user)
 	const {
@@ -35,6 +37,8 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 
 	const currentSession = useCurrentSession(repo.id)
 	const sessionState: States = currentSession?.state ?? 'disconnected'
+	const showPermissionsTab = Boolean(currentSession?.repository && currentSession.role === 'owner')
+	const showingPermissions = showPermissionsTab && activeTab === 'permissions'
 
 	const onDeleteSession = async () => {
 		if (currentSession?.state === 'connected') {
@@ -137,9 +141,35 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 				</div>
 			</div>
 			<Errors customMessage={customMessage} error={error} onClose={onClose} repo={repo} />
-			<div className="flex flex-1 overflow-hidden gap-4">
+			{showPermissionsTab && (
+				<div className="flex gap-1 border-b border-zinc-200">
+					{(['files', 'permissions'] as const).map((tab) => (
+						<button
+							key={tab}
+							type="button"
+							onClick={() => setActiveTab(tab)}
+							className={cn(
+								'border-b-2 px-4 py-2 text-sm font-medium transition-colors',
+								activeTab === tab
+									? 'border-violet-600 text-violet-700'
+									: 'border-transparent text-zinc-500 hover:text-zinc-900'
+							)}
+						>
+							{tab === 'files' ? 'Files' : 'Sharing permissions'}
+						</button>
+					))}
+				</div>
+			)}
+			<div
+				id={`repository-${repo.id}-${showingPermissions ? 'permissions' : 'files'}-panel`}
+				className="flex flex-1 overflow-hidden gap-4"
+			>
 				{currentSession?.repository ? (
-					<LinkedRepository repo={repo} hoveredFileIds={hoveredFileIds} />
+					showingPermissions ? (
+						<SharingPermissions repoId={repo.id} />
+					) : (
+						<LinkedRepository repo={repo} hoveredFileIds={hoveredFileIds} />
+					)
 				) : (
 					<UnlinkedRepository
 						onClose={onClose}
@@ -149,7 +179,9 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 						setInvalidRepository={setInvalidRepository}
 					/>
 				)}
-				<TransferHistory repoId={repo.id} setHoveredFileIds={setHoveredFileIds} />
+				{!showingPermissions && (
+					<TransferHistory repoId={repo.id} setHoveredFileIds={setHoveredFileIds} />
+				)}
 			</div>
 		</div>
 	)

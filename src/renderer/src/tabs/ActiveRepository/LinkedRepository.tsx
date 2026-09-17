@@ -27,14 +27,6 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 	)
 	const { error, onClose, setInvalidFiles } = useErrors()
 	const currentSession = useCurrentSession(repo.id)!
-	const collaborators = currentSession.members.filter((member) => member.role === 'collaborator')
-	const setSharingPermission = (targetSocketId: string, canShare: boolean) => {
-		window.electron.socket
-			.setSharingPermission({ repoId: repo.id.toString(), targetSocketId, canShare })
-			.catch((error) =>
-				toast.error('Could not update sharing permission', { description: String(error) })
-			)
-	}
 	const onDeleteFiles = (files: FilesType[]) => {
 		const localFileIds = files.filter((file) => !file.sourceId).map((file) => file.id)
 		if (localFileIds.length && currentSession.state === 'connected') {
@@ -84,36 +76,10 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 		}
 	}
 
-	console.log(currentSession)
-
 	return (
 		<>
 			{error && <ErrorFallback error={error} onClose={onClose} />}
 			<Card className="flex w-full flex-col">
-				{currentSession.role === 'owner' && collaborators.length > 0 && (
-					<div className="border-b border-zinc-200 px-5 py-3">
-						<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-							Sharing permissions
-						</p>
-						<div className="flex flex-wrap gap-2">
-							{collaborators.map((member) => (
-								<label
-									key={member.socketId}
-									className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm"
-								>
-									<input
-										type="checkbox"
-										checked={member.canShare}
-										onChange={(event) =>
-											setSharingPermission(member.socketId, event.target.checked)
-										}
-									/>
-									{member.username} can share
-								</label>
-							))}
-						</div>
-					</div>
-				)}
 				<div className="flex items-center justify-between p-5">
 					<div>
 						<h2 className="font-semibold text-zinc-900">Repository Files</h2>
