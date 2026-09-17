@@ -41,7 +41,8 @@ export class SocketService {
 
 		this.socket.on('connect', () => {
 			this.window.webContents.send('socket:connection', 'connected')
-			for (const session of this.connectedSessions.values()) this.socket?.emit('session:connect', session)
+			for (const session of this.connectedSessions.values())
+				this.socket?.emit('session:connect', session)
 		})
 
 		this.socket.on('disconnect', (reason) => {

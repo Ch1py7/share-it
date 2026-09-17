@@ -91,17 +91,28 @@ export const SocketHandler = () => {
 			const userId = useUserStore.getState().user?.id
 			if (!userId) return
 			const previous = useSessionsStore.getState().sessions.get(repoId)
-			const previousSocketId = previous?.members.find((member) => member.userId === userId)?.socketId
+			const previousSocketId = previous?.members.find(
+				(member) => member.userId === userId
+			)?.socketId
 			const self = members.find((member) => member.userId === userId)
 			setSessionMembers(repoId, members, userId)
 			if (!self?.canShare || self.socketId === previousSocketId) return
-			const files = previous?.files
-				.filter((file) => !file.sourceId)
-				.map(({ id, name, relativePath, hash, size }) => ({ id, name, relativePath, hash, size })) ?? []
+			const files =
+				previous?.files
+					.filter((file) => !file.sourceId)
+					.map(({ id, name, relativePath, hash, size }) => ({
+						id,
+						name,
+						relativePath,
+						hash,
+						size,
+					})) ?? []
 			if (files.length) {
-				window.electron.socket.shareFiles({ repoId: repoId.toString(), files }).catch((error) =>
-					toast.error('Could not publish shared files', { description: String(error) })
-				)
+				window.electron.socket
+					.shareFiles({ repoId: repoId.toString(), files })
+					.catch((error) =>
+						toast.error('Could not publish shared files', { description: String(error) })
+					)
 			}
 		})
 	}, [setSessionMembers])

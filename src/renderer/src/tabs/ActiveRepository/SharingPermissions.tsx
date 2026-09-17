@@ -29,7 +29,10 @@ export const SharingPermissions: React.FC<SharingPermissionsProps> = ({ repoId }
 			{collaborators.length > 0 ? (
 				<div className="divide-y divide-zinc-100">
 					{collaborators.map((member) => (
-						<label key={member.socketId} className="flex items-center justify-between gap-4 px-5 py-4">
+						<label
+							key={member.socketId}
+							className="flex items-center justify-between gap-4 px-5 py-4"
+						>
 							<div>
 								<p className="text-sm font-medium text-zinc-900">{member.username}</p>
 								<p className="text-xs text-zinc-500">Can share files</p>
