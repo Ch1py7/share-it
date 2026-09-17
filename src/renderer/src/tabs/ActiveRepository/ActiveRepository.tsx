@@ -91,6 +91,12 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 							</div>
 						</div>
 					</Tooltip>
+					{currentSession?.repository && (
+						<ReceiveDestinationNotice
+							repositoryPath={currentSession.repository.path}
+							userId={user?.id}
+						/>
+					)}
 				</div>
 
 				<div className="flex gap-2 items-center">
@@ -142,12 +148,6 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 				</div>
 			</div>
 			<Errors customMessage={customMessage} error={error} onClose={onClose} repo={repo} />
-			{currentSession?.repository && (
-				<ReceiveDestinationNotice
-					repositoryPath={currentSession.repository.path}
-					userId={user?.id}
-				/>
-			)}
 			{showPermissionsTab && (
 				<div className="flex gap-1 border-b border-zinc-200">
 					{(['files', 'permissions'] as const).map((tab) => (
