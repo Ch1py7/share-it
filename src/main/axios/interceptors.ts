@@ -6,6 +6,8 @@ export const setClientToken = (token: string) => {
 	currentAccessToken = token
 }
 
+export const getClientToken = () => currentAccessToken
+
 api.interceptors.request.use((config) => {
 	if (currentAccessToken) {
 		config.headers.Authorization = `Bearer ${currentAccessToken}`

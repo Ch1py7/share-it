@@ -2,9 +2,19 @@ export type SessionRole = 'owner' | 'collaborator'
 
 export interface Session {
 	role: SessionRole
+	canShare: boolean
+	members: SessionMember[]
 	state: States
 	repository?: Repository
 	files: Files[]
+}
+
+export interface SessionMember {
+	socketId: string
+	userId: string
+	username: string
+	role: SessionRole
+	canShare: boolean
 }
 
 export interface Repository {
@@ -39,5 +49,6 @@ export interface SessionsState {
 	setSessionFiles: (repoId: number, files: Files[]) => void
 	removeSessionFiles: (repoId: number, files: Files[]) => void
 	setSessionState: (repoId: number, state: States) => void
+	setSessionMembers: (repoId: number, members: SessionMember[], currentUserId: string) => void
 	getSessionsStateQty: () => SessionsStateQty
 }

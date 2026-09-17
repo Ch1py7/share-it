@@ -72,7 +72,7 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 	}, [currentTransfers])
 
 	return (
-		<Card className="flex min-w-sm flex-col overflow-hidden">
+		<Card className="flex max-w-sm w-full flex-col overflow-hidden">
 			<div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4">
 				<div className="flex items-center gap-3">
 					<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">

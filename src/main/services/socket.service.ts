@@ -3,19 +3,20 @@ import type { BrowserWindow } from 'electron'
 import {
 	ClientToServerEvents,
 	ConnectSession,
-	CreateTunnel,
 	DisconnectSession,
 	RemoveFiles,
 	RequestCatalog,
 	ServerToClientEvents,
 	ShareFiles,
+	SetSharingPermission,
 	SyncFiles,
 } from './socket.types'
+import { getClientToken } from '../axios/interceptors'
 
 export class SocketService {
 	private socket: Socket<ServerToClientEvents, ClientToServerEvents> | null = null
 	private readonly window: BrowserWindow
-	private readonly connectedRepoIds = new Set<number>()
+	private readonly connectedSessions = new Map<number, ConnectSession>()
 
 	constructor(window: BrowserWindow) {
 		this.window = window
@@ -25,15 +26,22 @@ export class SocketService {
 		if (this.socket?.connected) {
 			return
 		}
+		if (this.socket) {
+			this.socket.connect()
+			return
+		}
+		if (!getClientToken()) throw new Error('Sign in before connecting to a session')
 
 		this.socket = io('http://localhost:8000', {
 			autoConnect: false,
+			auth: (callback) => callback({ token: getClientToken() }),
 		})
 
 		this.socket.connect()
 
 		this.socket.on('connect', () => {
 			this.window.webContents.send('socket:connection', 'connected')
+			for (const session of this.connectedSessions.values()) this.socket?.emit('session:connect', session)
 		})
 
 		this.socket.on('disconnect', (reason) => {
@@ -84,10 +92,6 @@ export class SocketService {
 			})
 		})
 
-		this.socket.on('session:peer-requested-data', (data) => {
-			this.window.webContents.send('session:peer-requested-data', data)
-		})
-
 		this.socket.on('session:error', (data) => {
 			this.window.webContents.send('session:error', data)
 		})
@@ -105,26 +109,48 @@ export class SocketService {
 				repoId: Number(data.repoId),
 			})
 		})
+
+		this.socket.on('session:members', (data) => {
+			this.window.webContents.send('session:members', {
+				...data,
+				repoId: Number(data.repoId),
+			})
+		})
 	}
 
 	public disconnect() {
 		this.socket?.disconnect()
 		this.socket = null
-		this.connectedRepoIds.clear()
+		this.connectedSessions.clear()
 	}
 
-	public connectSession(payload: ConnectSession) {
-		if (!this.socket) {
-			this.connect()
+	public async connectSession(payload: ConnectSession) {
+		this.connect()
+		const socket = this.socket
+		if (!socket) throw new Error('Socket could not be created')
+		if (!socket.connected) {
+			await new Promise<void>((resolve, reject) => {
+				const timeout = setTimeout(() => finish(new Error('Socket connection timed out')), 10000)
+				const finish = (error?: Error) => {
+					clearTimeout(timeout)
+					socket.off('connect', onConnect)
+					socket.off('connect_error', onError)
+					if (error) reject(error)
+					else resolve()
+				}
+				const onConnect = () => finish()
+				const onError = (error: Error) => finish(error)
+				socket.once('connect', onConnect)
+				socket.once('connect_error', onError)
+			})
 		}
-
-		this.socket?.emit('session:connect', payload)
-		this.connectedRepoIds.add(Number(payload.repoId))
+		socket.emit('session:connect', payload)
+		this.connectedSessions.set(Number(payload.repoId), payload)
 	}
 
 	public disconnectSession(payload: DisconnectSession) {
 		this.socket?.emit('session:disconnect', payload)
-		this.connectedRepoIds.delete(Number(payload.repoId))
+		this.connectedSessions.delete(Number(payload.repoId))
 	}
 
 	public shareFiles(payload: ShareFiles) {
@@ -143,7 +169,7 @@ export class SocketService {
 		this.socket?.emit('session:sync-files', payload)
 	}
 
-	public createTunnel(payload: CreateTunnel) {
-		this.socket?.emit('session:create-tunnel', payload)
+	public setSharingPermission(payload: SetSharingPermission) {
+		this.socket?.emit('session:set-sharing-permission', payload)
 	}
 }

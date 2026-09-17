@@ -73,8 +73,8 @@ export const CreateSessionModal: React.FC<CreateSessionModalProps> = ({
 				<div className="grid grid-cols-2 gap-6">
 					<button type="button" onClick={() => onClick(selectedRepo.id, 'owner')}>
 						<RoleCard
-							title="Repository Owner"
-							description="Share repositories, invite collaborators and manage permissions."
+							title="Session Host"
+							description="Start the Share-it session, publish files and manage sharing permissions."
 							icon={<CrownIcon />}
 							iconStyle="bg-violet-100 text-violet-700"
 						/>

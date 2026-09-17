@@ -92,7 +92,7 @@ export const Files: React.FC<FilesProps> = ({
 						)}
 					>
 						<div className="flex items-center gap-3">
-							{!isRemote && currentSession.role === 'owner' && (
+							{!isRemote && currentSession.canShare && (
 								<input
 									type="checkbox"
 									checked={selectedFiles.includes(file)}
@@ -131,7 +131,7 @@ export const Files: React.FC<FilesProps> = ({
 									<RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
 									{isSyncing ? 'Syncing' : 'Sync'}
 								</button>
-							) : currentSession.role === 'owner' ? (
+							) : currentSession.canShare ? (
 								<button
 									type="button"
 									onClick={() => onDelete([file])}

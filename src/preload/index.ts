@@ -1,7 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import {
 	ConnectSession,
-	CreateTunnel,
 	DisconnectSession,
 	ReceiveFiles,
 	RemoveFiles,
@@ -9,6 +8,7 @@ import {
 	ReposParams,
 	SendFiles,
 	ShareFiles,
+	SetSharingPermission,
 	SyncFiles,
 } from './index.types'
 import { notifications } from './listeners/notifications'
@@ -65,8 +65,8 @@ if (process.contextIsolated) {
 				requestCatalog: (params: RequestCatalog) =>
 					ipcRenderer.invoke('session:request-catalog', { params }),
 				syncFiles: (params: SyncFiles) => ipcRenderer.invoke('session:sync-files', { params }),
-				createTunnel: (params: CreateTunnel) =>
-					ipcRenderer.invoke('session:create-tunnel', { params }),
+				setSharingPermission: (params: SetSharingPermission) =>
+					ipcRenderer.invoke('session:set-sharing-permission', { params }),
 			},
 
 			be: {

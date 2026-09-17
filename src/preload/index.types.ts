@@ -23,9 +23,9 @@ declare global {
 				onCatalogRefreshing: (callback: (data: OnCatalogRequested) => void) => () => void
 				onLocalFileChanged: (callback: (data: OnLocalFileChanged) => void) => () => void
 				onLocalFilesRemoved: (callback: (data: OnLocalFilesRemoved) => void) => () => void
-				onPeerRequestedData: (callback: (data: OnPeerRequestedData) => void) => () => void
 				onFilesDelivery: (callback: (data: OnFilesDelivery) => void) => () => void
 				onFilesToSend: (callback: (data: OnFilesToSend) => void) => () => void
+				onMembers: (callback: (data: OnMembers) => void) => () => void
 
 				connectSession: (params: ConnectSession) => Promise<void>
 				disconnectSession: (params: DisconnectSession) => Promise<void>
@@ -34,7 +34,7 @@ declare global {
 				removeFiles: (params: RemoveFiles) => Promise<void>
 				requestCatalog: (params: RequestCatalog) => Promise<void>
 				syncFiles: (params: SyncFiles) => Promise<void>
-				createTunnel: (params: CreateTunnel) => Promise<void>
+				setSharingPermission: (params: SetSharingPermission) => Promise<void>
 			}
 			be: {
 				logout: () => Promise<{ success: true } | FailureResponse>
@@ -77,12 +77,23 @@ export interface RequestCatalog {
 	repoId: string
 }
 
-export interface CreateTunnel {
-	receiverId: string
-	receiverName: string
-	batchId: string
+export interface SetSharingPermission {
 	repoId: string
-	filesIds: string[]
+	targetSocketId: string
+	canShare: boolean
+}
+
+interface OnMembers {
+	repoId: number
+	members: SessionMember[]
+}
+
+interface SessionMember {
+	socketId: string
+	userId: string
+	username: string
+	role: 'owner' | 'collaborator'
+	canShare: boolean
 }
 
 interface OnFilesPublished {
@@ -112,8 +123,6 @@ interface OnLocalFilesRemoved {
 	filesIds: string[]
 }
 
-type OnPeerRequestedData = CreateTunnel
-
 interface OnError {
 	message: string
 }
@@ -136,13 +145,11 @@ interface SharedFile {
 
 export interface ConnectSession {
 	repoId: string
-	username: string
-	userId: number
 	role: 'owner' | 'collaborator'
 	repositoryName: string
 }
 
-export type DisconnectSession = Omit<ConnectSession, 'userId' | 'role'>
+export type DisconnectSession = Omit<ConnectSession, 'role'>
 
 interface OnNotification {
 	title: string

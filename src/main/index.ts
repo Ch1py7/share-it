@@ -268,7 +268,9 @@ handleTrusted('session:remove-files', (_, { params }) => {
 })
 handleTrusted('session:request-catalog', (_, { params }) => socketService?.requestCatalog(params))
 handleTrusted('session:sync-files', (_, { params }) => socketService?.syncFiles(params))
-handleTrusted('session:create-tunnel', (_, { params }) => socketService?.createTunnel(params))
+handleTrusted('session:set-sharing-permission', (_, { params }) =>
+	socketService?.setSharingPermission(params)
+)
 
 handleTrusted('select-folder', async (_, repoId: number) => {
 	if (!Number.isSafeInteger(repoId) || repoId <= 0) throw new Error('Invalid repository ID')

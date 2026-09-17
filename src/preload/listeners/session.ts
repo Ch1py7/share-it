@@ -7,7 +7,7 @@ export const session = (ipcRenderer: Electron.IpcRenderer) => ({
 	onCatalogRefreshing: onSocket(ipcRenderer, 'session:catalog-refreshing'),
 	onLocalFileChanged: onSocket(ipcRenderer, 'session:local-file-changed'),
 	onLocalFilesRemoved: onSocket(ipcRenderer, 'session:local-files-removed'),
-	onPeerRequestedData: onSocket(ipcRenderer, 'session:peer-requested-data'),
 	onFilesDelivery: onSocket(ipcRenderer, 'session:files-delivery'),
 	onFilesToSend: onSocket(ipcRenderer, 'session:files-to-send'),
+	onMembers: onSocket(ipcRenderer, 'session:members'),
 })

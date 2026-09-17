@@ -48,8 +48,6 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 		if (!user) return
 		await window.electron.socket.connectSession({
 			repoId: repo.id.toString(),
-			userId: user.githubId,
-			username: user.githubUsername,
 			repositoryName: repo.name,
 			role: currentSession?.role ?? 'collaborator',
 		})
@@ -59,7 +57,6 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 		if (!user) return
 		await window.electron.socket.disconnectSession({
 			repoId: repo.id.toString(),
-			username: user.githubUsername,
 			repositoryName: repo.name,
 		})
 	}
@@ -92,7 +89,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 				</div>
 
 				<div className="flex gap-2 items-center">
-					{sessionState === 'pending' && (
+					{(sessionState === 'pending' || sessionState === 'error') && (
 						<button
 							type="button"
 							className="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-1 text-sm font-medium text-white shadow-sm transition-all hover:bg-violet-700 hover:shadow-md"

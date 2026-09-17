@@ -1,12 +1,16 @@
 export interface ConnectSession {
 	repositoryName: string
 	repoId: string
-	username: string
-	userId: number
 	role: 'owner' | 'collaborator'
 }
 
-export type DisconnectSession = Omit<ConnectSession, 'userId' | 'role'>
+export type DisconnectSession = Omit<ConnectSession, 'role'>
+
+export interface SetSharingPermission {
+	repoId: string
+	targetSocketId: string
+	canShare: boolean
+}
 
 type States = 'disconnected' | 'error' | 'connected' | 'loading' | 'pending'
 
@@ -30,14 +34,6 @@ export interface RequestCatalog {
 	repoId: string
 }
 
-export interface CreateTunnel {
-	receiverId: string
-	receiverName: string
-	batchId: string
-	repoId: string
-	filesIds: string[]
-}
-
 export interface SharedFile {
 	id: string
 	name: string
@@ -59,7 +55,6 @@ export interface ServerToClientEvents {
 	'session:files-removed': (data: { repoId: string; senderId: string; filesIds?: string[] }) => void
 	'session:catalog-requested': (data: { repoId: string }) => void
 	'session:catalog-refreshing': (data: { repoId: string }) => void
-	'session:peer-requested-data': (data: CreateTunnel) => void
 	'session:error': (data: { message: string }) => void
 	'session:files-delivery': (data: {
 		batchId: string
@@ -75,6 +70,15 @@ export interface ServerToClientEvents {
 		receiverId: string
 		receiverName: string
 	}) => void
+	'session:members': (data: { repoId: string; members: SessionMember[] }) => void
+}
+
+export interface SessionMember {
+	socketId: string
+	userId: string
+	username: string
+	role: 'owner' | 'collaborator'
+	canShare: boolean
 }
 
 export interface ClientToServerEvents {
@@ -84,5 +88,5 @@ export interface ClientToServerEvents {
 	'session:remove-files': (data: RemoveFiles) => void
 	'session:request-catalog': (data: RequestCatalog) => void
 	'session:sync-files': (data: SyncFiles) => void
-	'session:create-tunnel': (data: CreateTunnel) => void
+	'session:set-sharing-permission': (data: SetSharingPermission) => void
 }

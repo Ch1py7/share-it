@@ -8,6 +8,8 @@ export const useSessionsStore = create<SessionsState>()((set, get) => ({
 		const next = new Map(get().sessions)
 		next.set(repoId, {
 			role,
+			canShare: role === 'owner',
+			members: [],
 			state: 'disconnected',
 			files: [],
 		})
@@ -72,6 +74,19 @@ export const useSessionsStore = create<SessionsState>()((set, get) => ({
 			state,
 		})
 
+		set({ sessions: next })
+	},
+	setSessionMembers: (repoId, members, currentUserId) => {
+		const current = get().sessions.get(repoId)
+		if (!current) return
+		const self = members.find((member) => member.userId === currentUserId)
+		const next = new Map(get().sessions)
+		next.set(repoId, {
+			...current,
+			members,
+			role: self?.role ?? current.role,
+			canShare: self?.canShare ?? current.canShare,
+		})
 		set({ sessions: next })
 	},
 	getSessionsStateQty: () => {

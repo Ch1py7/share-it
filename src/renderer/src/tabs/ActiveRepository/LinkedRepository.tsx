@@ -27,6 +27,14 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 	)
 	const { error, onClose, setInvalidFiles } = useErrors()
 	const currentSession = useCurrentSession(repo.id)!
+	const collaborators = currentSession.members.filter((member) => member.role === 'collaborator')
+	const setSharingPermission = (targetSocketId: string, canShare: boolean) => {
+		window.electron.socket
+			.setSharingPermission({ repoId: repo.id.toString(), targetSocketId, canShare })
+			.catch((error) =>
+				toast.error('Could not update sharing permission', { description: String(error) })
+			)
+	}
 	const onDeleteFiles = (files: FilesType[]) => {
 		const localFileIds = files.filter((file) => !file.sourceId).map((file) => file.id)
 		if (localFileIds.length && currentSession.state === 'connected') {
@@ -76,10 +84,36 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 		}
 	}
 
+	console.log(currentSession)
+
 	return (
 		<>
 			{error && <ErrorFallback error={error} onClose={onClose} />}
 			<Card className="flex w-full flex-col">
+				{currentSession.role === 'owner' && collaborators.length > 0 && (
+					<div className="border-b border-zinc-200 px-5 py-3">
+						<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+							Sharing permissions
+						</p>
+						<div className="flex flex-wrap gap-2">
+							{collaborators.map((member) => (
+								<label
+									key={member.socketId}
+									className="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm"
+								>
+									<input
+										type="checkbox"
+										checked={member.canShare}
+										onChange={(event) =>
+											setSharingPermission(member.socketId, event.target.checked)
+										}
+									/>
+									{member.username} can share
+								</label>
+							))}
+						</div>
+					</div>
+				)}
 				<div className="flex items-center justify-between p-5">
 					<div>
 						<h2 className="font-semibold text-zinc-900">Repository Files</h2>
@@ -88,16 +122,19 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 					</div>
 
 					<div className="flex items-center justify-center gap-2">
-						<button
-							type="button"
-							onClick={handleRefreshFiles}
-							disabled={currentSession.state !== 'connected'}
-							className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
-							title="Ask connected users for their latest files"
-						>
-							<RefreshCw size={15} />
-							Refresh files
-						</button>
+						{(currentSession.role === 'collaborator' ||
+							currentSession.members.some((m) => m.role === 'collaborator' && m.canShare)) && (
+							<button
+								type="button"
+								onClick={handleRefreshFiles}
+								disabled={currentSession.state !== 'connected'}
+								className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+								title="Ask connected users for their latest files"
+							>
+								<RefreshCw size={15} />
+								Refresh files
+							</button>
+						)}
 						{Boolean(selectedFiles.length) && (
 							<>
 								<div className="h-5 w-px bg-zinc-200" />
@@ -127,10 +164,10 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 						hoveredFileIds={hoveredFileIds}
 					/>
 				)}
-				{currentSession.role === 'owner' && (
+				{currentSession.canShare && (
 					<AddFiles onClick={handleSelectFiles} full={currentSession.files.length === 0} />
 				)}
-				{currentSession.role === 'collaborator' && currentSession.files.length === 0 && (
+				{!currentSession.canShare && currentSession.files.length === 0 && (
 					<div className="flex flex-1 items-center justify-center px-8 py-12 text-center">
 						<p className="max-w-sm text-sm text-zinc-500">
 							No files are currently available. Refresh the catalog or wait for the owner to share

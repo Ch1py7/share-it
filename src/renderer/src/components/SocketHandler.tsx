@@ -1,5 +1,6 @@
 import { useFilesStore } from '@renderer/stores/files/files.store'
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
+import { useUserStore } from '@renderer/stores/user/user.store'
 import { useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
 import { toast } from 'sonner'
@@ -10,6 +11,7 @@ export const SocketHandler = () => {
 	)
 	const addTransfer = useFilesStore((state) => state.addTransfer)
 	const setTransferStatus = useFilesStore((state) => state.setTransferStatus)
+	const setSessionMembers = useSessionsStore((state) => state.setSessionMembers)
 
 	useEffect(() => {
 		const unsubscribe = window.electron.socket.onNotification((notification) => {
@@ -85,9 +87,29 @@ export const SocketHandler = () => {
 	}, [])
 
 	useEffect(() => {
+		return window.electron.socket.onMembers(({ repoId, members }) => {
+			const userId = useUserStore.getState().user?.id
+			if (!userId) return
+			const previous = useSessionsStore.getState().sessions.get(repoId)
+			const previousSocketId = previous?.members.find((member) => member.userId === userId)?.socketId
+			const self = members.find((member) => member.userId === userId)
+			setSessionMembers(repoId, members, userId)
+			if (!self?.canShare || self.socketId === previousSocketId) return
+			const files = previous?.files
+				.filter((file) => !file.sourceId)
+				.map(({ id, name, relativePath, hash, size }) => ({ id, name, relativePath, hash, size })) ?? []
+			if (files.length) {
+				window.electron.socket.shareFiles({ repoId: repoId.toString(), files }).catch((error) =>
+					toast.error('Could not publish shared files', { description: String(error) })
+				)
+			}
+		})
+	}, [setSessionMembers])
+
+	useEffect(() => {
 		return window.electron.socket.onCatalogRequested(({ repoId }) => {
 			const session = useSessionsStore.getState().sessions.get(repoId)
-			if (session?.role !== 'owner') return
+			if (!session?.canShare) return
 			const files =
 				session?.files
 					.filter((file) => !file.sourceId)
@@ -136,18 +158,6 @@ export const SocketHandler = () => {
 				session.files.filter((file) => !file.sourceId && filesIds.includes(file.id))
 			)
 		})
-	}, [])
-
-	useEffect(() => {
-		const unsubscribe = window.electron.socket.onPeerRequestedData((data) => {
-			window.electron.socket
-				.createTunnel(data)
-				.catch((error) => toast.error('Could not create transfer', { description: String(error) }))
-		})
-
-		return () => {
-			unsubscribe()
-		}
 	}, [])
 
 	useEffect(() => {

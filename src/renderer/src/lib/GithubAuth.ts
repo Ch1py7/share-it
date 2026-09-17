@@ -21,7 +21,7 @@ export class GithubAuth {
 
 		url.searchParams.set('client_id', import.meta.env.VITE_GITHUB_CLIENT_ID)
 		url.searchParams.set('redirect_uri', 'myapp://oauth')
-		url.searchParams.set('scope', 'read:user repo')
+		url.searchParams.set('scope', 'read:user repo read:org')
 
 		url.searchParams.set('state', state)
 

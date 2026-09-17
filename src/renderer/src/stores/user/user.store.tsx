@@ -38,6 +38,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
 		} catch {
 			toast.error('Could not contact the server while signing out')
 		} finally {
+			await window.electron.socket.disconnect()
 			set({
 				user: null,
 				repos: [],
