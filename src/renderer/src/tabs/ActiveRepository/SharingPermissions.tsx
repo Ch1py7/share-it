@@ -1,6 +1,7 @@
 import { Card } from '@renderer/components/Card'
 import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
 import { toast } from 'sonner'
+import { cn } from '@renderer/lib/utils'
 
 interface SharingPermissionsProps {
 	repoId: number
@@ -31,7 +32,12 @@ export const SharingPermissions: React.FC<SharingPermissionsProps> = ({ repoId }
 					{collaborators.map((member) => (
 						<label
 							key={member.socketId}
-							className="flex items-center justify-between gap-4 px-5 py-4"
+							className={cn(
+								'flex items-center justify-between gap-4 border-l-2 px-5 py-4 transition-colors',
+								member.canShare
+									? 'border-l-violet-500 bg-violet-50/80 hover:bg-violet-100/70'
+									: 'border-l-transparent hover:bg-zinc-50'
+							)}
 						>
 							<div>
 								<p className="text-sm font-medium text-zinc-900">{member.username}</p>
