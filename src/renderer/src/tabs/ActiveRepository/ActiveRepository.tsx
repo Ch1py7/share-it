@@ -67,7 +67,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 	}
 
 	return (
-		<div className="flex h-full flex-col p-6 gap-3">
+		<div className="flex h-full min-h-0 flex-col p-6 gap-3">
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-4">
 					<button
@@ -167,7 +167,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 					))}
 				</div>
 			)}
-			<div className="flex flex-1 overflow-hidden gap-4">
+			<div className="flex min-h-0 flex-1 gap-4">
 				{currentSession?.repository ? (
 					showingPermissions ? (
 						<SharingPermissions repoId={repo.id} />

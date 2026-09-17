@@ -79,7 +79,7 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 	return (
 		<>
 			{error && <ErrorFallback error={error} onClose={onClose} />}
-			<Card className="flex w-full flex-col">
+			<Card className="flex min-h-0 w-full flex-col">
 				<div className="flex items-center justify-between p-5">
 					<div>
 						<h2 className="font-semibold text-zinc-900">Repository Files</h2>

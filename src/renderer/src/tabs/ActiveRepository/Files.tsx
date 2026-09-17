@@ -70,7 +70,7 @@ export const Files: React.FC<FilesProps> = ({
 	}
 
 	return (
-		<div ref={listRef} className="flex-1 overflow-y-auto">
+		<div ref={listRef} className="min-h-0 flex-1 overflow-y-auto">
 			{currentSession.files.map((file) => {
 				const isRemote = Boolean(file.sourceId)
 				const isSyncing = syncingFileIds.has(file.id)

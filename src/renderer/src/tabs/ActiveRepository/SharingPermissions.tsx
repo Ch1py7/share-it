@@ -19,7 +19,7 @@ export const SharingPermissions: React.FC<SharingPermissionsProps> = ({ repoId }
 	}
 
 	return (
-		<Card className="flex w-full flex-col">
+		<Card className="flex min-h-0 w-full flex-col">
 			<div className="border-b border-zinc-200 px-5 py-4">
 				<h2 className="font-semibold text-zinc-900">Sharing permissions</h2>
 				<p className="mt-1 text-sm text-zinc-500">
@@ -27,7 +27,7 @@ export const SharingPermissions: React.FC<SharingPermissionsProps> = ({ repoId }
 				</p>
 			</div>
 			{collaborators.length > 0 ? (
-				<div className="divide-y divide-zinc-100">
+				<div className="min-h-0 flex-1 divide-y divide-zinc-100 overflow-y-auto">
 					{collaborators.map((member) => (
 						<label
 							key={member.socketId}

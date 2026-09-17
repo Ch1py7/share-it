@@ -72,7 +72,7 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 	}, [currentTransfers])
 
 	return (
-		<Card className="flex max-w-sm w-full flex-col overflow-hidden">
+		<Card className="flex min-h-0 max-w-sm w-full flex-col overflow-hidden">
 			<div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4">
 				<div className="flex items-center gap-3">
 					<div className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600">
@@ -94,7 +94,7 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 			</div>
 
 			{transfers.length ? (
-				<div className="divide-y divide-zinc-100">
+				<div className="min-h-0 flex-1 divide-y divide-zinc-100 overflow-y-auto">
 					{transfers.map(([id, batch]) => {
 						const status = transferStatus[batch.status]
 						const StatusIcon = status.icon
