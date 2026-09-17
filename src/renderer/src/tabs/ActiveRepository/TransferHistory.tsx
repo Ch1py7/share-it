@@ -125,7 +125,6 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 															#{id.slice(6, 16)}
 														</span>
 													</div>
-
 													<p className="mt-0.5 text-xs text-zinc-500">
 														{batch.senderName
 															? `${batch.status === 'sent' ? 'Synchronized by' : 'From'} ${batch.senderName} · `
@@ -134,7 +133,6 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 													</p>
 												</div>
 											</div>
-
 											<div className="flex shrink-0 flex-col items-end">
 												<Tooltip
 													content={status.tooltip}
@@ -149,13 +147,11 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 														{status.label}
 													</span>
 												</Tooltip>
-
 												<span className="text-xs text-zinc-400">
 													{batch.files.length} {batch.files.length === 1 ? 'file' : 'files'}
 												</span>
 											</div>
 										</div>
-
 										<div className="mt-4 space-y-1.5 pl-9">
 											{batch.files.map((file) => (
 												<div
@@ -164,10 +160,8 @@ export const TransferHistory: React.FC<TransferHistoryProps> = ({ repoId, setHov
 												>
 													<div className="flex min-w-0 flex-1 items-center gap-2">
 														<FileCode2 size={13} className="shrink-0 text-zinc-400" />
-
 														<span className="truncate">{file.relativePath}</span>
 													</div>
-
 													<span className="ml-auto min-w-16 shrink-0 text-right text-zinc-400">
 														{file.hash ? formatFileSize(file.size) : '—'}
 													</span>

@@ -4,6 +4,7 @@ import { useUserStore } from '@renderer/stores/user/user.store'
 import { useEffect } from 'react'
 import { useShallow } from 'zustand/shallow'
 import { toast } from 'sonner'
+import { getSyncDestination } from '@renderer/settings/sync-destination'
 
 export const SocketHandler = () => {
 	const { setSessionState } = useSessionsStore(
@@ -187,6 +188,7 @@ export const SocketHandler = () => {
 				await window.electron.be.receiveFiles({
 					batchId,
 					repoId,
+					syncDestination: getSyncDestination(useUserStore.getState().user?.id),
 					requestedFileIds: filesIds,
 					expectedFiles: receivedFiles.map(({ sourceFileId, relativePath, hash, size }) => ({
 						id: sourceFileId!,

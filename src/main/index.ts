@@ -230,7 +230,12 @@ handleTrusted('be:send-files', async (_, { params }) => {
 })
 handleTrusted('be:receive-files', async (_, { params }) => {
 	if (!params || !isBatchId(params.batchId)) throw new Error('Invalid batch')
+	if (params.syncDestination !== 'repository' && params.syncDestination !== 'share-it') {
+		throw new Error('Invalid synchronization destination')
+	}
 	const repositoryPath = authorizedRepositories.requireRoot(params.repoId)
+	const destinationPath =
+		params.syncDestination === 'share-it' ? path.join(repositoryPath, 'share-it') : repositoryPath
 	const watchedRepository = watchedRepositories.get(params.repoId)
 	if (watchedRepository) {
 		watchedRepository.suppressChanges = true
@@ -240,7 +245,7 @@ handleTrusted('be:receive-files', async (_, { params }) => {
 	try {
 		return await backend.receiveFiles({
 			batchId: params.batchId,
-			repositoryPath,
+			repositoryPath: destinationPath,
 			requestedFileIds: params.requestedFileIds,
 			expectedFiles: params.expectedFiles,
 		})

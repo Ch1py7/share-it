@@ -11,9 +11,10 @@ import { cn } from '@renderer/lib/utils'
 import { RepositoryCard } from '@renderer/tabs/Repositories/RepositoryCard'
 import { LoaderCircle, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
+import { Settings } from '@renderer/tabs/Settings/Settings'
 
 export const Layout = () => {
-	const page: Pages = 'repositories'
+	const [page, setPage] = useState<Pages>('repositories')
 	const [selectedRepo, setSelectedRepo] = useState<GithubRepo | null>(null)
 	const [isOpen, setIsOpen] = useState(false)
 	const repos = useUserStore((state) => state.repos)
@@ -80,48 +81,22 @@ export const Layout = () => {
 			)}
 			<div className="flex w-full h-screen">
 				<div className={cn('flex flex-col w-full transition-all duration-300 ease-in-out')}>
-					<Header />
+					<Header onOpenSettings={() => setPage('settings')} isSettingsOpen={page === 'settings'} />
 					<div
 						ref={scrollContainerRef}
 						className="flex-1 min-h-0 overflow-x-hidden overflow-y-auto"
 					>
-						{page === 'repositories' &&
-							(isSelectedActiveRepo && selectedRepo ? (
-								<ActiveRepository repo={selectedRepo} onBack={onCancel} />
-							) : (
-								<div className="space-y-6 px-6 py-4">
-									{sessionRepos.length > 0 && (
-										<section>
-											<h2 className="mb-3 text-sm font-semibold text-zinc-900">Sessions</h2>
-											<div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-												{sessionRepos.map((repo) => (
-													<RepositoryCard
-														key={repo.id}
-														repo={repo}
-														onClick={handleSelectRepository}
-													/>
-												))}
-											</div>
-										</section>
-									)}
-
+						{page === 'settings' ? (
+							<Settings onBack={() => setPage('repositories')} />
+						) : isSelectedActiveRepo && selectedRepo ? (
+							<ActiveRepository repo={selectedRepo} onBack={onCancel} />
+						) : (
+							<div className="space-y-6 px-6 py-4">
+								{sessionRepos.length > 0 && (
 									<section>
-										<div className="mb-3 flex min-h-8 items-center justify-between">
-											{sessionRepos.length > 0 && (
-												<h2 className="text-sm font-semibold text-zinc-900">Repositories</h2>
-											)}
-											<button
-												type="button"
-												onClick={handleRefresh}
-												disabled={reposLoading}
-												className="ml-auto flex h-8 items-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
-											>
-												<RefreshCw size={14} className={cn(reposLoading && 'animate-spin')} />
-												{reposLoading ? 'Loading...' : 'Refresh'}
-											</button>
-										</div>
+										<h2 className="mb-3 text-sm font-semibold text-zinc-900">Sessions</h2>
 										<div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-											{availableRepos.map((repo) => (
+											{sessionRepos.map((repo) => (
 												<RepositoryCard
 													key={repo.id}
 													repo={repo}
@@ -129,14 +104,37 @@ export const Layout = () => {
 												/>
 											))}
 										</div>
-										<div ref={loadMoreRef} className="flex h-12 items-center justify-center">
-											{reposLoading && (
-												<LoaderCircle className="animate-spin text-zinc-400" size={20} />
-											)}
-										</div>
 									</section>
-								</div>
-							))}
+								)}
+
+								<section>
+									<div className="mb-3 flex min-h-8 items-center justify-between">
+										{sessionRepos.length > 0 && (
+											<h2 className="text-sm font-semibold text-zinc-900">Repositories</h2>
+										)}
+										<button
+											type="button"
+											onClick={handleRefresh}
+											disabled={reposLoading}
+											className="ml-auto flex h-8 items-center gap-2 rounded-lg border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											<RefreshCw size={14} className={cn(reposLoading && 'animate-spin')} />
+											{reposLoading ? 'Loading...' : 'Refresh'}
+										</button>
+									</div>
+									<div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+										{availableRepos.map((repo) => (
+											<RepositoryCard key={repo.id} repo={repo} onClick={handleSelectRepository} />
+										))}
+									</div>
+									<div ref={loadMoreRef} className="flex h-12 items-center justify-center">
+										{reposLoading && (
+											<LoaderCircle className="animate-spin text-zinc-400" size={20} />
+										)}
+									</div>
+								</section>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

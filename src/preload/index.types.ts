@@ -225,6 +225,7 @@ export interface SendFiles {
 export interface ReceiveFiles {
 	repoId: number
 	batchId: string
+	syncDestination: 'repository' | 'share-it'
 	requestedFileIds: string[]
 	expectedFiles: Array<{
 		id: string

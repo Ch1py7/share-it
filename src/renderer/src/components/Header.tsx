@@ -1,11 +1,16 @@
 import { useSessionsStore } from '@renderer/stores/sessions/sessions.store'
 import { useUserStore } from '@renderer/stores/user/user.store'
-import { Bell, LogOut, Search, User2, Users } from 'lucide-react'
+import { Bell, LogOut, Search, Settings2, User2, Users } from 'lucide-react'
 import { CurrentSessions } from './tooltips/CurrentSessions'
 import { Tooltip } from './Tooltip'
 import { useShallow } from 'zustand/shallow'
 
-export const Header = () => {
+interface HeaderProps {
+	onOpenSettings: () => void
+	isSettingsOpen: boolean
+}
+
+export const Header = ({ onOpenSettings, isSettingsOpen }: HeaderProps) => {
 	const { user, logout } = useUserStore(
 		useShallow((state) => ({ user: state.user, logout: state.logout }))
 	)
@@ -63,6 +68,14 @@ export const Header = () => {
 				</div>
 
 				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={onOpenSettings}
+						title="Settings"
+						className={`flex h-10 w-10 items-center justify-center rounded-xl transition hover:bg-zinc-100 hover:text-zinc-900 ${isSettingsOpen ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600'}`}
+					>
+						<Settings2 size={18} />
+					</button>
 					<button
 						type="button"
 						className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"

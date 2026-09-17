@@ -15,6 +15,7 @@ import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
 import { TransferHistory } from './TransferHistory'
 import { SharingPermissions } from './SharingPermissions'
 import { useState } from 'react'
+import { ReceiveDestinationNotice } from './ReceiveDestinationNotice'
 
 interface ActiveRepositoryProps {
 	repo: GithubRepo
@@ -141,6 +142,12 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 				</div>
 			</div>
 			<Errors customMessage={customMessage} error={error} onClose={onClose} repo={repo} />
+			{currentSession?.repository && (
+				<ReceiveDestinationNotice
+					repositoryPath={currentSession.repository.path}
+					userId={user?.id}
+				/>
+			)}
 			{showPermissionsTab && (
 				<div className="flex gap-1 border-b border-zinc-200">
 					{(['files', 'permissions'] as const).map((tab) => (
@@ -160,10 +167,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 					))}
 				</div>
 			)}
-			<div
-				id={`repository-${repo.id}-${showingPermissions ? 'permissions' : 'files'}-panel`}
-				className="flex flex-1 overflow-hidden gap-4"
-			>
+			<div className="flex flex-1 overflow-hidden gap-4">
 				{currentSession?.repository ? (
 					showingPermissions ? (
 						<SharingPermissions repoId={repo.id} />
