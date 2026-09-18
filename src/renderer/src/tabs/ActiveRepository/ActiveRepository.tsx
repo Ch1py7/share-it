@@ -33,6 +33,7 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 		onClose,
 		setDifferentRepository,
 		setInvalidRepository,
+		setInvalidFiles,
 		setCustomMessage,
 	} = useErrors()
 
@@ -172,7 +173,11 @@ export const ActiveRepository: React.FC<ActiveRepositoryProps> = ({ repo, onBack
 					showingPermissions ? (
 						<SharingPermissions repoId={repo.id} />
 					) : (
-						<LinkedRepository repo={repo} hoveredFileIds={hoveredFileIds} />
+						<LinkedRepository
+							setInvalidFiles={setInvalidFiles}
+							repo={repo}
+							hoveredFileIds={hoveredFileIds}
+						/>
 					)
 				) : (
 					<UnlinkedRepository

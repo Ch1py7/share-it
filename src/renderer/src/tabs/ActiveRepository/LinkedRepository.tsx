@@ -8,16 +8,19 @@ import { useState } from 'react'
 import { AddFiles } from './AddFiles'
 import { useCurrentSession } from '@renderer/hooks/sessions/useCurrentSession'
 import { useShallow } from 'zustand/shallow'
-import { ErrorFallback } from '@renderer/components/ErrorFallback'
-import { useErrors } from '@renderer/hooks/useErrors'
 import { toast } from 'sonner'
 
 interface LinkedRepositoryProps {
 	repo: GithubRepo
 	hoveredFileIds: Set<string>
+	setInvalidFiles: () => void
 }
 
-export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hoveredFileIds }) => {
+export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({
+	repo,
+	hoveredFileIds,
+	setInvalidFiles,
+}) => {
 	const [selectedFiles, setSelectedFiles] = useState<FilesType[]>([])
 	const { removeSessionFiles, setSessionFiles } = useSessionsStore(
 		useShallow((state) => ({
@@ -25,7 +28,6 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 			setSessionFiles: state.setSessionFiles,
 		}))
 	)
-	const { error, onClose, setInvalidFiles } = useErrors()
 	const currentSession = useCurrentSession(repo.id)!
 	const onDeleteFiles = (files: FilesType[]) => {
 		const localFileIds = files.filter((file) => !file.sourceId).map((file) => file.id)
@@ -77,71 +79,68 @@ export const LinkedRepository: React.FC<LinkedRepositoryProps> = ({ repo, hovere
 	}
 
 	return (
-		<>
-			{error && <ErrorFallback error={error} onClose={onClose} />}
-			<Card className="flex min-h-0 w-full flex-col">
-				<div className="flex items-center justify-between p-5">
-					<div>
-						<h2 className="font-semibold text-zinc-900">Repository Files</h2>
+		<Card className="flex min-h-0 w-full flex-col">
+			<div className="flex items-center justify-between p-5">
+				<div>
+					<h2 className="font-semibold text-zinc-900">Repository Files</h2>
 
-						<p className="mt-1 text-sm text-zinc-500">Files selected for synchronization</p>
-					</div>
+					<p className="mt-1 text-sm text-zinc-500">Files selected for synchronization</p>
+				</div>
 
-					<div className="flex items-center justify-center gap-2">
-						{(currentSession.role === 'collaborator' ||
-							currentSession.members.some((m) => m.role === 'collaborator' && m.canShare)) && (
+				<div className="flex items-center justify-center gap-2">
+					{(currentSession.role === 'collaborator' ||
+						currentSession.members.some((m) => m.role === 'collaborator' && m.canShare)) && (
+						<button
+							type="button"
+							onClick={handleRefreshFiles}
+							disabled={currentSession.state !== 'connected'}
+							className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+							title="Ask connected users for their latest files"
+						>
+							<RefreshCw size={15} />
+							Refresh files
+						</button>
+					)}
+					{Boolean(selectedFiles.length) && (
+						<>
+							<div className="h-5 w-px bg-zinc-200" />
+
+							<div className="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
+								{selectedFiles.length} selected
+							</div>
+
 							<button
 								type="button"
-								onClick={handleRefreshFiles}
-								disabled={currentSession.state !== 'connected'}
-								className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
-								title="Ask connected users for their latest files"
+								onClick={() => onDeleteFiles(selectedFiles)}
+								className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-red-50 hover:text-red-600"
 							>
-								<RefreshCw size={15} />
-								Refresh files
+								<Trash2 size={15} />
 							</button>
-						)}
-						{Boolean(selectedFiles.length) && (
-							<>
-								<div className="h-5 w-px bg-zinc-200" />
-
-								<div className="rounded-lg bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
-									{selectedFiles.length} selected
-								</div>
-
-								<button
-									type="button"
-									onClick={() => onDeleteFiles(selectedFiles)}
-									className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-red-50 hover:text-red-600"
-								>
-									<Trash2 size={15} />
-								</button>
-							</>
-						)}
-					</div>
+						</>
+					)}
 				</div>
-				{currentSession.files.length !== 0 && (
-					<Files
-						repoId={repo.id}
-						currentSession={currentSession}
-						onDelete={onDeleteFiles}
-						selectedFiles={selectedFiles}
-						setSelectedFiles={setSelectedFiles}
-						hoveredFileIds={hoveredFileIds}
-					/>
-				)}
-				{currentSession.canShare && (
-					<AddFiles onClick={handleSelectFiles} full={currentSession.files.length === 0} />
-				)}
-				{!currentSession.canShare && currentSession.files.length === 0 && (
-					<div className="flex flex-1 items-center justify-center px-8 py-12 text-center">
-						<p className="max-w-sm text-sm text-zinc-500">
-							No files are currently available. Refresh the catalog or wait for the owner to share
-							files.
-						</p>
-					</div>
-				)}
-			</Card>
-		</>
+			</div>
+			{currentSession.files.length !== 0 && (
+				<Files
+					repoId={repo.id}
+					currentSession={currentSession}
+					onDelete={onDeleteFiles}
+					selectedFiles={selectedFiles}
+					setSelectedFiles={setSelectedFiles}
+					hoveredFileIds={hoveredFileIds}
+				/>
+			)}
+			{currentSession.canShare && (
+				<AddFiles onClick={handleSelectFiles} full={currentSession.files.length === 0} />
+			)}
+			{!currentSession.canShare && currentSession.files.length === 0 && (
+				<div className="flex flex-1 items-center justify-center px-8 py-12 text-center">
+					<p className="max-w-sm text-sm text-zinc-500">
+						No files are currently available. Refresh the catalog or wait for the owner to share
+						files.
+					</p>
+				</div>
+			)}
+		</Card>
 	)
 }
