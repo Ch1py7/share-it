@@ -1,3 +1,5 @@
+import { type KeyObject } from 'node:crypto'
+
 export interface ConnectSession {
 	repositoryName: string
 	repoId: string
@@ -43,6 +45,15 @@ export interface SharedFile {
 }
 
 export interface ServerToClientEvents {
+	'session:transfer-key': (data: {
+		batchId: string
+		publicKey: string
+		identityKey: string
+		signature: string
+		fromRole: 'transmitter' | 'receiver'
+		fromUserId: string
+		fromUsername: string
+	}) => void
 	notification: (data: { title: string; description: string }) => void
 	'session:notification': (data: { title: string; description: string }) => void
 	status: (data: { repoId: string; status: States }) => void
@@ -82,6 +93,12 @@ export interface SessionMember {
 }
 
 export interface ClientToServerEvents {
+	'session:transfer-key': (data: {
+		batchId: string
+		publicKey: string
+		identityKey: string
+		signature: string
+	}) => void
 	'session:connect': (data: ConnectSession) => void
 	'session:disconnect': (data: DisconnectSession) => void
 	'session:share-files': (data: ShareFiles) => void
@@ -89,4 +106,15 @@ export interface ClientToServerEvents {
 	'session:request-catalog': (data: RequestCatalog) => void
 	'session:sync-files': (data: SyncFiles) => void
 	'session:set-sharing-permission': (data: SetSharingPermission) => void
+}
+
+export interface TransferKeyState {
+	privateKey: KeyObject
+	role: 'transmitter' | 'receiver'
+	key?: Buffer
+	error?: Error
+	verifying?: boolean
+	resolve?: (key: Buffer) => void
+	reject?: (error: Error) => void
+	timer: NodeJS.Timeout
 }

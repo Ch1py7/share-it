@@ -4,11 +4,13 @@ import { setClientToken } from './axios/interceptors'
 import { ErrorCodes } from './axios/errorCodes'
 import fs from 'node:fs'
 import { PassThrough } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
 import { ZipArchive } from 'archiver'
 import path from 'node:path'
 import axios from 'axios'
 import { app } from 'electron'
 import { extractVerifiedArchive } from './utils/receive-files'
+import { decryptTransfer, encryptTransfer } from './security/transfer-crypto'
 
 const requestError = (error: unknown) => {
 	if (axios.isAxiosError(error)) {
@@ -176,13 +178,18 @@ export class BackendService {
 		}
 	}
 
-	public async sendFiles({ batchId, filePaths, repositoryPath }: SendFiles): Promise<{
+	public async sendFiles({
+		batchId,
+		filePaths,
+		repositoryPath,
+		transferKey,
+	}: SendFiles & { transferKey: Buffer }): Promise<{
 		success: boolean
 	}> {
 		const streamBridge = new PassThrough()
 		const archive = new ZipArchive({ zlib: { level: 5 } })
 
-		archive.pipe(streamBridge)
+		archive.pipe(encryptTransfer(transferKey, batchId)).pipe(streamBridge)
 
 		for (const filePath of filePaths) {
 			if (!fs.existsSync(filePath)) continue
@@ -198,14 +205,13 @@ export class BackendService {
 			}
 
 			archive.file(filePath, {
-				// ZIP entry names always use forward slashes, including on Windows.
 				name: relativePath.split(path.sep).join('/'),
 			})
 		}
 
 		const request = api.post(`/stream-bridge/${batchId}/transmitter`, streamBridge, {
 			headers: {
-				'Content-Type': 'application/zip',
+				'Content-Type': 'application/octet-stream',
 			},
 		})
 
@@ -228,7 +234,8 @@ export class BackendService {
 		repositoryPath,
 		requestedFileIds,
 		expectedFiles,
-	}: ReceiveFiles): Promise<{
+		transferKey,
+	}: ReceiveFiles & { transferKey: Buffer }): Promise<{
 		success: boolean
 	}> {
 		const response = await api.get(`/stream-bridge/${batchId}/receiver`, {
@@ -247,16 +254,20 @@ export class BackendService {
 		) {
 			response.data.resume()
 			throw new Error(
-				`Could not receive files: expected a ZIP stream, received ${contentType || 'an unknown content type'}`
+				`Could not receive files: expected an encrypted stream, received ${contentType || 'an unknown content type'}`
 			)
 		}
 
-		await extractVerifiedArchive({
-			stream: response.data,
-			repositoryPath,
-			requestedFileIds,
-			expectedFiles,
-		})
+		const decrypted = decryptTransfer(transferKey, batchId)
+		await Promise.all([
+			pipeline(response.data, decrypted),
+			extractVerifiedArchive({
+				stream: decrypted,
+				repositoryPath,
+				requestedFileIds,
+				expectedFiles,
+			}),
+		])
 		return { success: true }
 	}
 }

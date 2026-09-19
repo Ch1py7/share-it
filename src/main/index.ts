@@ -226,7 +226,9 @@ handleTrusted('be:send-files', async (_, { params }) => {
 		params.repoId,
 		params.filePaths
 	)
-	return backend.sendFiles({ batchId: params.batchId, filePaths, repositoryPath })
+	if (!socketService) throw new Error('Socket is unavailable')
+	const transferKey = await socketService.takeTransferKey(params.batchId, 'transmitter')
+	return backend.sendFiles({ batchId: params.batchId, filePaths, repositoryPath, transferKey })
 })
 handleTrusted('be:receive-files', async (_, { params }) => {
 	if (!params || !isBatchId(params.batchId)) throw new Error('Invalid batch')
@@ -243,11 +245,14 @@ handleTrusted('be:receive-files', async (_, { params }) => {
 		watchedRepository.timers.clear()
 	}
 	try {
+		if (!socketService) throw new Error('Socket is unavailable')
+		const transferKey = await socketService.takeTransferKey(params.batchId, 'receiver')
 		return await backend.receiveFiles({
 			batchId: params.batchId,
 			repositoryPath: destinationPath,
 			requestedFileIds: params.requestedFileIds,
 			expectedFiles: params.expectedFiles,
+			transferKey,
 		})
 	} finally {
 		setTimeout(() => {
